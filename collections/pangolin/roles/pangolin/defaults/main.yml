@@ -1,0 +1,45 @@
+pangolin_dir: /opt/pangolin
+
+# Dashboard domain and base domain for resources
+pangolin_domain: pangolin.example.com
+pangolin_base_domain: example.com
+pangolin_acme_email: admin@example.com
+# pangolin_server_secret: host vault, at least 32 characters
+
+# Pangolin, Gerbil and Badger are updated together (Renovate group "pangolin server")
+# renovate: datasource=docker depName=docker.io/fosrl/pangolin
+pangolin_version: "1.27.0"
+pangolin_image: docker.io/fosrl/pangolin
+# renovate: datasource=docker depName=docker.io/fosrl/gerbil
+pangolin_gerbil_version: "1.6.0"
+pangolin_gerbil_image: docker.io/fosrl/gerbil
+# renovate: datasource=github-releases depName=fosrl/badger
+pangolin_badger_version: v1.8.0
+# renovate: datasource=docker depName=docker.io/library/traefik
+pangolin_traefik_version: v3.7.19
+pangolin_traefik_image: docker.io/traefik
+
+# Memory of the pangolin container, empty limit = no limits
+pangolin_memory_limit: 2g
+pangolin_memory_reservation: 512m
+
+# config/config.yml
+pangolin_log_level: info
+pangolin_telemetry: true
+pangolin_maxmind_db_path: ./config/GeoLite2-Country.mmdb
+pangolin_flags:
+    require_email_verification: false
+    disable_signup_without_invite: true
+    disable_user_create_org: false
+    allow_raw_resources: true
+# Further top-level sections, e.g. email
+pangolin_config_extra: {}
+
+# Additional routers in the Pangolin Traefik (without Badger), e.g. for an identity provider
+# - { name: dex, host: auth.example.com, url: "http://dex:5556" }
+pangolin_extra_routers: []
+
+# Backup of docker-compose.yml and config/ (including the SQLite DB) before every change
+pangolin_backup_enabled: true
+pangolin_backup_dir: /opt/pangolin-backups
+pangolin_backup_keep: 10

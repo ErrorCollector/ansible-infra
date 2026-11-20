@@ -1,0 +1,23 @@
+# Domain playbook, imported by the project site.yml: import_playbook: errorcollector.pangolin.site
+# Hosts come from the inventory groups pangolin_server, newt and pangolin_client.
+# The server runs first: Newt sites restart when Pangolin changed in the same run.
+-   name: Pangolin server
+    hosts: pangolin_server
+    become: true
+    roles:
+        -   role: errorcollector.pangolin.pangolin
+            tags: [pangolin, pangolin_server]
+
+-   name: Newt
+    hosts: newt
+    become: true
+    roles:
+        -   role: errorcollector.pangolin.newt
+            tags: [pangolin, newt]
+
+-   name: Pangolin client
+    hosts: pangolin_client
+    become: true
+    roles:
+        -   role: errorcollector.pangolin.pangolin_client
+            tags: [pangolin, pangolin_client]

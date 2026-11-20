@@ -1,0 +1,15 @@
+services:
+    {{ newt_site.service | default('pangolin_newt') }}:
+        image: {{ newt_image }}:{{ newt_version }}
+        container_name: {{ newt_site.name }}
+        restart: unless-stopped
+        env_file:
+            -   .env
+{% if newt_network | length > 0 %}
+        networks:
+            - {{ newt_network }}
+
+networks:
+    {{ newt_network }}:
+        external: true
+{% endif %}

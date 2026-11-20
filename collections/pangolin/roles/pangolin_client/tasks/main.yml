@@ -1,0 +1,36 @@
+-   name: Check credentials
+    ansible.builtin.assert:
+        that:
+            - pangolin_client_endpoint | length > 0
+            - pangolin_client_id | length > 0
+            - pangolin_client_secret | length > 0
+        fail_msg: "Set pangolin_machine_id (host_vars) and pangolin_machine_secret (host vault)"
+        quiet: true
+
+-   name: Ensure directory exists
+    ansible.builtin.file:
+        path: "{{ pangolin_client_dir }}"
+        state: directory
+        mode: "0755"
+    register: pangolin_client_dir_result
+
+-   name: Deploy docker-compose.yaml
+    ansible.builtin.template:
+        src: docker-compose.yaml.j2
+        dest: "{{ pangolin_client_dir }}/docker-compose.yaml"
+        mode: "0644"
+
+# diff: false keeps the secret out of `make plan` and CI logs
+-   name: Deploy .env
+    ansible.builtin.template:
+        src: env.j2
+        dest: "{{ pangolin_client_dir }}/.env"
+        mode: "0600"
+    diff: false
+
+-   name: Start Pangolin client
+    community.docker.docker_compose_v2:
+        project_src: "{{ pangolin_client_dir }}"
+        state: present
+        pull: missing
+    when: not (ansible_check_mode and pangolin_client_dir_result is changed)
