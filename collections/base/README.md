@@ -58,7 +58,7 @@ Variables a project can override before the `include`: `INVENTORY`, `INIT_INVENT
 
 | Target | |
 |---|---|
-| `make install` | Install the collections pinned in `requirements.d/` |
+| `make install` | Install the collections and roles pinned in `requirements.d/` |
 | `make versions` | Pinned vs. installed versions |
 | `make plan [DOMAIN=…] [HOSTS=…] [TAGS=…]` | `--check --diff` |
 | `make deploy [DOMAIN=…] [HOSTS=…\|all] [TAGS=…]` | Roll out, without `HOSTS` the hosts are chosen interactively |
