@@ -1,0 +1,9 @@
+-   name: Newt site
+    ansible.builtin.include_tasks: site.yml
+    loop: "{{ newt_sites | selectattr('id') | list }}"
+    loop_control:
+        loop_var: newt_site
+        label: "{{ newt_site.name }}"
+    vars:
+        newt_network: "{{ newt_site.network | default('pangolin') }}"
+        newt_restart_with: "{{ newt_site.restart_with | default('pangolin_server') }}"

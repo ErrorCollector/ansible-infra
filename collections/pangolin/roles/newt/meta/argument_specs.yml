@@ -1,0 +1,55 @@
+argument_specs:
+    main:
+        short_description: Newt sites (Pangolin tunnel clients) in Docker
+        description:
+            - One Docker Compose project per site. Containers are only recreated when the compose file or the
+              credentials change.
+            - A site is restarted when a host of its I(restart_with) group changed Pangolin in the same run
+              (fact C(pangolin_changed) of the role C(errorcollector.pangolin.pangolin)), because Newt does not
+              rebuild its tunnel on its own. The Pangolin play has to run first.
+        options:
+            newt_version:
+                type: str
+                default: "1.20.1"
+                description: Image tag.
+            newt_image:
+                type: str
+                default: fosrl/newt
+                description: Image without tag.
+            newt_sites:
+                type: list
+                elements: dict
+                description: Sites on this host. Sites with an empty I(id) are skipped.
+                options:
+                    name:
+                        type: str
+                        required: true
+                        description: Container name.
+                    dir:
+                        type: str
+                        required: true
+                        description: Directory of the compose project (its name is the compose project name).
+                    endpoint:
+                        type: str
+                        description: Pangolin URL.
+                    id:
+                        type: str
+                        description: Newt id of the site, empty = site not on this host.
+                    secret:
+                        type: str
+                        no_log: true
+                        description: Newt secret (host vault).
+                    service:
+                        type: str
+                        default: pangolin_newt
+                        description: Compose service name. Changing it replaces the container.
+                    network:
+                        type: str
+                        default: pangolin
+                        description:
+                            - External Docker network, created if missing, for resources in other containers.
+                            - Empty for the default bridge network, e.g. when the resource is the host itself.
+                    restart_with:
+                        type: str
+                        default: pangolin_server
+                        description: Inventory group of the Pangolin server of this site, empty to never restart.

@@ -1,0 +1,15 @@
+# Pangolin machine client: gives this host access to Pangolin private resources
+# (aliases like <name>.internal). Runs in the host network so the tunnel
+# interface and the alias DNS are available to the host.
+services:
+    pangolin_client:
+        image: {{ pangolin_client_image }}:{{ pangolin_client_version }}
+        container_name: pangolin_client
+        restart: unless-stopped
+        network_mode: host
+        cap_add:
+            - NET_ADMIN
+        devices:
+            - /dev/net/tun:/dev/net/tun
+        env_file:
+            - .env

@@ -1,0 +1,94 @@
+-   name: Check server secret
+    ansible.builtin.assert:
+        that: pangolin_server_secret | length >= 32
+        fail_msg: "pangolin_server_secret (host vault) needs at least 32 characters"
+        quiet: true
+
+-   name: Ensure pangolin directories exist
+    ansible.builtin.file:
+        path: "{{ pangolin_dir }}/{{ item }}"
+        state: directory
+        mode: "0755"
+    loop:
+        - ""
+        - config
+        - config/traefik
+        - config/traefik/logs
+        - config/letsencrypt
+    register: pangolin_dirs
+
+-   name: Check for pending changes
+    ansible.builtin.template:
+        src: "{{ item.path }}.j2"
+        dest: "{{ pangolin_dir }}/{{ item.path }}"
+        mode: "{{ item.mode }}"
+    loop:
+        - { path: docker-compose.yml, mode: "0644" }
+        - { path: config/config.yml, mode: "0600" }
+        - { path: config/traefik/traefik_config.yml, mode: "0644" }
+        - { path: config/traefik/dynamic_config.yml, mode: "0644" }
+    loop_control:
+        label: "{{ item.path }}"
+    check_mode: true
+    diff: false
+    register: pangolin_pending
+
+# Read by errorcollector.pangolin.newt on the Newt hosts: Newt has to reconnect after Pangolin restarted
+-   name: Remember if pangolin changes in this run
+    ansible.builtin.set_fact:
+        pangolin_changed: "{{ pangolin_pending.results | selectattr('changed') | list | length > 0 }}"
+
+-   name: Backup before changes
+    ansible.builtin.include_tasks: backup.yml
+    when:
+        - pangolin_backup_enabled | bool
+        - pangolin_changed | bool
+
+-   name: Deploy docker-compose.yml
+    ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: "{{ pangolin_dir }}/docker-compose.yml"
+        mode: "0644"
+
+# diff: false keeps the server secret out of `make plan` and CI logs
+-   name: Deploy pangolin config.yml
+    ansible.builtin.template:
+        src: config/config.yml.j2
+        dest: "{{ pangolin_dir }}/config/config.yml"
+        owner: root
+        group: root
+        mode: "0600"
+    diff: false
+    notify: Restart pangolin
+
+-   name: Deploy traefik config
+    ansible.builtin.template:
+        src: "config/traefik/{{ item }}.j2"
+        dest: "{{ pangolin_dir }}/config/traefik/{{ item }}"
+        mode: "0644"
+    loop:
+        - traefik_config.yml
+        - dynamic_config.yml
+    notify: Restart pangolin
+
+# Recreates only the services whose definition changed (e.g. a new image)
+-   name: Start Pangolin
+    community.docker.docker_compose_v2:
+        project_src: "{{ pangolin_dir }}"
+        state: present
+        pull: missing
+    when: not (ansible_check_mode and pangolin_dirs is changed)
+
+-   name: Apply pending restarts
+    ansible.builtin.meta: flush_handlers
+
+-   name: Wait until pangolin is healthy
+    ansible.builtin.command: docker inspect --format "{{ '{{' }}.State.Health.Status{{ '}}' }}" pangolin
+    register: pangolin_health
+    until: pangolin_health.stdout == "healthy"
+    retries: 30
+    delay: 5
+    changed_when: false
+    when:
+        - pangolin_changed | bool
+        - not ansible_check_mode

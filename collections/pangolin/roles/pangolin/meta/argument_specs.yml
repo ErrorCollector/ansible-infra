@@ -1,0 +1,98 @@
+argument_specs:
+    main:
+        short_description: Pangolin server with Gerbil and Traefik in Docker
+        description:
+            - Renders docker-compose.yml, config/config.yml and the Traefik config, backs up compose file and config
+              (including the SQLite DB) before every change and waits until Pangolin is healthy again.
+            - "Sets the fact C(pangolin_changed): Newt sites with this host's group in I(restart_with) restart
+              afterwards (role C(errorcollector.pangolin.newt))."
+        options:
+            pangolin_dir:
+                type: str
+                default: /opt/pangolin
+                description: Directory of the compose project.
+            pangolin_domain:
+                type: str
+                required: true
+                description: Dashboard domain.
+            pangolin_base_domain:
+                type: str
+                required: true
+                description: Base domain for resources.
+            pangolin_acme_email:
+                type: str
+                required: true
+                description: Let's Encrypt account e-mail.
+            pangolin_server_secret:
+                type: str
+                required: true
+                no_log: true
+                description: Server secret, at least 32 characters (host vault).
+            pangolin_version:
+                type: str
+                description: Pangolin image tag.
+            pangolin_image:
+                type: str
+                description: Pangolin image without tag.
+            pangolin_gerbil_version:
+                type: str
+                description: Gerbil image tag.
+            pangolin_gerbil_image:
+                type: str
+                description: Gerbil image without tag.
+            pangolin_badger_version:
+                type: str
+                description: Badger Traefik plugin version.
+            pangolin_traefik_version:
+                type: str
+                description: Traefik image tag.
+            pangolin_traefik_image:
+                type: str
+                description: Traefik image without tag.
+            pangolin_memory_limit:
+                type: str
+                description: Memory limit of the pangolin container, empty for no limits.
+            pangolin_memory_reservation:
+                type: str
+                description: Memory reservation of the pangolin container.
+            pangolin_log_level:
+                type: str
+                description: C(app.log_level).
+            pangolin_telemetry:
+                type: bool
+                description: C(app.telemetry.anonymous_usage).
+            pangolin_maxmind_db_path:
+                type: str
+                description: C(server.maxmind_db_path), empty to leave it out.
+            pangolin_flags:
+                type: dict
+                description: C(flags) section.
+            pangolin_config_extra:
+                type: dict
+                description: Further top-level sections of config.yml.
+            pangolin_extra_routers:
+                type: list
+                elements: dict
+                description: Additional Traefik routers without Badger.
+                options:
+                    name:
+                        type: str
+                        required: true
+                        description: Router and service name.
+                    host:
+                        type: str
+                        required: true
+                        description: Host rule.
+                    url:
+                        type: str
+                        required: true
+                        description: Backend URL.
+            pangolin_backup_enabled:
+                type: bool
+                description: Backup before every change.
+            pangolin_backup_dir:
+                type: str
+                description: Backup directory.
+            pangolin_backup_keep:
+                type: int
+                description: Number of backups to keep.

@@ -1,0 +1,32 @@
+argument_specs:
+    main:
+        short_description: Pangolin machine client in Docker
+        description:
+            - Gives the host access to Pangolin private resources (host network, tun device).
+              The container is only recreated when the compose file or the credentials change.
+        options:
+            pangolin_client_version:
+                type: str
+                default: "0.23.0"
+                description: Image tag.
+            pangolin_client_image:
+                type: str
+                default: fosrl/pangolin-cli
+                description: Image without tag.
+            pangolin_client_dir:
+                type: str
+                default: /opt/pangolin-client
+                description: Directory of the compose project.
+            pangolin_client_endpoint:
+                type: str
+                required: true
+                description: Pangolin URL, default C(pangolin_newt_endpoint).
+            pangolin_client_id:
+                type: str
+                required: true
+                description: Machine client id, default C(pangolin_machine_id).
+            pangolin_client_secret:
+                type: str
+                required: true
+                no_log: true
+                description: Machine client secret (host vault), default C(pangolin_machine_secret).
