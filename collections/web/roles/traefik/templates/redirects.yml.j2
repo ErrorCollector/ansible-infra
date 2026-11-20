@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+http:
+    routers:
+{% for redirect in traefik_redirects %}
+        redirect-{{ redirect.host | replace('.', '-') }}:
+            rule: "Host(`{{ redirect.host }}`)"
+            entryPoints:
+                - websecure
+            middlewares:
+                - redirect-{{ redirect.host | replace('.', '-') }}
+            service: noop@internal
+{% endfor %}
+    middlewares:
+{% for redirect in traefik_redirects %}
+        redirect-{{ redirect.host | replace('.', '-') }}:
+            redirectRegex:
+                regex: "^.*$"
+                replacement: "{{ redirect.target }}"
+                permanent: {{ redirect.permanent | default(false) | bool | lower }}
+{% endfor %}

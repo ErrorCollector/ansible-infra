@@ -1,0 +1,128 @@
+-   name: Ensure traefik directories exist
+    ansible.builtin.file:
+        path: "{{ traefik_dir }}/{{ item.path }}"
+        state: directory
+        mode: "{{ item.mode }}"
+    loop:
+        - { path: "", mode: "0755" }
+        - { path: letsencrypt, mode: "0700" }
+        - { path: dynamic, mode: "0755" }
+        - { path: plugins-local, mode: "0755" }
+    loop_control:
+        label: "{{ traefik_dir }}/{{ item.path }}"
+    register: traefik_dirs
+
+# Traefik watches dynamic/, changes there need no restart
+-   name: Deploy traefik dynamic config (TLS options)
+    ansible.builtin.template:
+        src: tls.yml.j2
+        dest: "{{ traefik_dir }}/dynamic/tls.yml"
+        mode: "0644"
+
+-   name: Deploy static redirects
+    ansible.builtin.template:
+        src: redirects.yml.j2
+        dest: "{{ traefik_dir }}/dynamic/redirects.yml"
+        mode: "0644"
+    when: traefik_redirects | length > 0
+
+-   name: Remove static redirects
+    ansible.builtin.file:
+        path: "{{ traefik_dir }}/dynamic/redirects.yml"
+        state: absent
+    when: traefik_redirects | length == 0
+
+# Traefik loads local plugins only when it starts, a new version needs a restart.
+# The path below src/ has to match the module path in go.mod.
+-   name: Deploy local plugins
+    ansible.builtin.git:
+        repo: "{{ item.repo }}"
+        dest: "{{ traefik_dir }}/plugins-local/src/{{ item.module }}"
+        version: "{{ item.version }}"
+        depth: 1
+    loop: "{{ traefik_local_plugins }}"
+    loop_control:
+        label: "{{ item.name }} {{ item.version }}"
+    notify: Restart traefik
+
+-   name: Find checked out local plugins
+    ansible.builtin.find:
+        paths: "{{ traefik_dir }}/plugins-local/src"
+        file_type: directory
+        recurse: true
+        depth: 3
+    register: traefik_plugin_dirs
+
+# Module paths are host/owner/name (3 levels): remove those no longer in traefik_local_plugins
+-   name: Remove local plugins that are no longer configured
+    ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+    loop: >-
+        {{ traefik_plugin_dirs.files | map(attribute='path')
+           | select('match', '^' ~ (traefik_dir ~ '/plugins-local/src/') | regex_escape ~ '[^/]+/[^/]+/[^/]+$')
+           | difference(traefik_local_plugins | map(attribute='module')
+                        | map('regex_replace', '^', traefik_dir ~ '/plugins-local/src/') | list) }}
+    notify: Restart traefik
+
+-   name: Deploy traefik static config
+    ansible.builtin.template:
+        src: traefik.yml.j2
+        dest: "{{ traefik_dir }}/traefik.yml"
+        mode: "0644"
+    notify: Restart traefik
+
+-   name: Deploy docker-compose.yaml
+    ansible.builtin.template:
+        src: docker-compose.yaml.j2
+        dest: "{{ traefik_dir }}/docker-compose.yaml"
+        mode: "0644"
+
+# IPv6 in the traefik network: without it docker-proxy accepts incoming IPv6 connections and Traefik sees a docker
+# gateway (172.x) instead of the client IP, e.g. in logs and tracking. With IPv6 Docker forwards them via ip6tables
+# (also while pangolin stays IPv4-only); Docker picks the IPv6 subnet (ULA) itself.
+-   name: Inspect traefik docker network
+    community.docker.docker_network_info:
+        name: traefik
+    register: traefik_network
+
+# A network cannot be switched to IPv6, only recreated. docker_network would disconnect all containers and leave them
+# disconnected, so: disconnect, recreate with the same IPv4 subnet, reconnect every container with its previous IP.
+# Traefik does not notice network changes (only container events) and would route to the wrong containers with new
+# IPs; the restart afterwards reads the containers fresh. Traefik stays reachable via pangolin, only the backends are
+# missing for the seconds in between.
+-   name: Recreate traefik docker network with IPv6
+    ansible.builtin.shell: |
+        set -euo pipefail
+        {% raw %}
+        subnet=$(docker network inspect traefik --format '{{range .IPAM.Config}}{{.Subnet}} {{end}}' | tr ' ' '\n' | grep -v ':' | head -1)
+        gateway=$(docker network inspect traefik --format '{{range .IPAM.Config}}{{.Gateway}} {{end}}' | tr ' ' '\n' | grep -v ':' | head -1)
+        endpoints=$(docker network inspect traefik --format '{{range .Containers}}{{.Name}}={{.IPv4Address}} {{end}}')
+        {% endraw %}
+        for e in $endpoints; do docker network disconnect traefik "${e%%=*}"; done
+        docker network rm traefik
+        docker network create --ipv6 --subnet "$subnet" --gateway "$gateway" traefik
+        for e in $endpoints; do ip=${e#*=}; docker network connect --ip "${ip%/*}" traefik "${e%%=*}"; done
+    args:
+        executable: /bin/bash
+    changed_when: true
+    when:
+        - traefik_network.exists
+        - not traefik_network.network.EnableIPv6
+        - not ansible_check_mode
+    notify: Restart traefik
+
+-   name: Ensure docker networks exist
+    community.docker.docker_network:
+        name: "{{ item.name }}"
+        enable_ipv6: "{{ item.ipv6 }}"
+        state: present
+    loop:
+        - { name: traefik, ipv6: true }
+        - { name: pangolin, ipv6: false }
+
+-   name: Deploy traefik
+    community.docker.docker_compose_v2:
+        project_src: "{{ traefik_dir }}"
+        pull: missing
+    when: not (ansible_check_mode and traefik_dirs is changed)

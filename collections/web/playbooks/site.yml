@@ -1,0 +1,8 @@
+# Domain playbook, imported by the project site.yml: import_playbook: errorcollector.web.site
+# Hosts come from the inventory group traefik.
+-   name: Traefik
+    hosts: traefik
+    become: true
+    roles:
+        -   role: errorcollector.web.traefik
+            tags: [web, traefik]

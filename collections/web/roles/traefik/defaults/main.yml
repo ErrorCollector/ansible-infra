@@ -1,0 +1,30 @@
+traefik_dir: /opt/traefik
+
+# renovate: datasource=docker depName=docker.io/library/traefik
+traefik_version: v3.7.19
+traefik_image: traefik
+
+# Let's Encrypt: traefik_acme_email is required (project vars)
+traefik_acme_staging: false
+
+# Internal entrypoint for dashboard, API and ping. Not published on the host, only reachable through the
+# docker network pangolin (Newt target traefik:<port>).
+traefik_dashboard_port: 8080
+
+traefik_log_level: INFO
+traefik_access_log: false
+
+# Static redirects (file provider):
+#   traefik_redirects:
+#       -   host: www.example.com
+#           target: https://example.com
+#           permanent: true        # optional, default false (302)
+traefik_redirects: []
+
+# Local plugins, checked out from git and loaded when Traefik starts (a change restarts Traefik):
+#   traefik_local_plugins:
+#       -   name: myPlugin                      # name in the middleware labels
+#           module: github.com/example/plugin   # module path from go.mod
+#           repo: https://github.com/example/plugin.git
+#           version: v1.0.0                     # git tag
+traefik_local_plugins: []

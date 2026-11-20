@@ -1,0 +1,65 @@
+global:
+    checkNewVersion: false
+    sendAnonymousUsage: false
+
+log:
+    level: "{{ traefik_log_level }}"
+{% if traefik_access_log %}
+
+accessLog: {}
+{% endif %}
+
+api:
+    dashboard: true
+
+ping:
+    entryPoint: dashboard
+
+entryPoints:
+    web:
+        address: ":80"
+        asDefault: true
+        http:
+            redirections:
+                entryPoint:
+                    to: websecure
+                    scheme: https
+    websecure:
+        address: ":443"
+        asDefault: true
+        http:
+            tls:
+                certResolver: letsencrypt
+    # Internal only (not published): dashboard, API and ping, e.g. for Newt/Pangolin
+    dashboard:
+        address: ":{{ traefik_dashboard_port }}"
+
+providers:
+    docker:
+        exposedByDefault: false
+        network: traefik
+    # dynamic configuration (TLS options, redirects); a directory, so watch sees replaced files
+    file:
+        directory: /etc/traefik/dynamic
+        watch: true
+
+certificatesResolvers:
+    letsencrypt:
+        acme:
+            email: "{{ traefik_acme_email }}"
+            storage: /letsencrypt/acme.json
+{% if traefik_acme_staging %}
+            caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+{% endif %}
+            httpChallenge:
+                entryPoint: web
+{% if traefik_local_plugins | length > 0 %}
+
+experimental:
+    localPlugins:
+{% for plugin in traefik_local_plugins %}
+        # in labels: traefik.http.middlewares.<middleware>.plugin.{{ plugin.name }}.<option>
+        {{ plugin.name }}:
+            moduleName: {{ plugin.module }}
+{% endfor %}
+{% endif %}
