@@ -39,7 +39,10 @@ argument_specs:
                 description: Registry metadata database container postgres_registry.
             gitlab_registry_db_image:
                 type: str
-                description: Image of postgres_registry.
+                description: Image of postgres_registry without tag.
+            gitlab_registry_db_version:
+                type: str
+                description: Image tag of postgres_registry (minor updates only, a major needs a migration).
             gitlab_registry_db_user:
                 type: str
                 description: Database user for the health check.

@@ -28,11 +28,13 @@ gitlab_runner_aws_secret_access_key: ""
 # Job images from AWS ECR (amazon-ecr-credential-helper in the runner container, uses the keys above)
 gitlab_runner_ecr_enabled: false
 gitlab_runner_ecr_registry: ""
+# renovate: datasource=github-releases depName=awslabs/amazon-ecr-credential-helper extractVersion=^v(?<version>.+)$
 gitlab_runner_ecr_helper_version: "0.10.1"
 gitlab_runner_ecr_helper_arch:
     x86_64: amd64
     aarch64: arm64
-# SHA256 of the helper (the .sha256 files of the release); a version update needs the new values
+# SHA256 of the helper (the .sha256 files of the release); a version update needs the new values,
+# CI (scripts/check-checksums.py) fails until they match
 gitlab_runner_ecr_helper_checksums:
     x86_64: sha256:ae5f2c0f1a2283f687e24a529f41d58f29c0a5bcfa0b60d1d3f8dc33b7eac4f2
     aarch64: sha256:d321a6c4044fda6a4c6c6054d8e5b56ae9c902b6e37f5cc3b0d89df9298b07ef

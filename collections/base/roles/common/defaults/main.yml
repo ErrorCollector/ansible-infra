@@ -21,7 +21,7 @@ common_docker_log_max_file: "3"
 # renovate: datasource=github-releases depName=ajeetdsouza/zoxide extractVersion=^v(?<version>.+)$
 common_zoxide_version: "0.10.0"
 # SHA256 of the release archives (GitHub asset digests). A version update needs the new values,
-# until then the download fails on purpose.
+# until then the download fails on purpose and CI (scripts/check-checksums.py) fails.
 common_zoxide_checksums:
     x86_64: sha256:2d93385b99f3e82cf2701609a1bffcad863fbeb75aa3fe7eb6be4d29be68b1ae
     aarch64: sha256:f1f16c5d6298d63dee467eedea1cdcd8490e43e493bea43acd416dc9033ef641

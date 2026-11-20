@@ -5,6 +5,15 @@
         ":semanticCommits",
         ":semanticCommitTypeAll(fix)"
     ],
+    "prHourlyLimit": 0,
+    "prConcurrentLimit": 0,
+    "branchConcurrentLimit": 0,
+    "gitlabci": {
+        "managerFilePatterns": [
+            "/(^|/)\\.gitlab-ci\\.ya?ml$/",
+            "/^collections/base/extras/gitlab-ci\\.yml$/"
+        ]
+    },
     "customManagers": [
         {
             "customType": "regex",
@@ -40,6 +49,24 @@
             "matchPackageNames": ["gitlab/gitlab-ce", "gitlab/gitlab-runner"],
             "groupName": "gitlab",
             "semanticCommitScope": "gitlab"
+        },
+        {
+            "description": "Registry database of the GitLab server: a major needs a dump/restore, never as update",
+            "matchPackageNames": ["postgres"],
+            "matchUpdateTypes": ["major"],
+            "enabled": false
+        },
+        {
+            "description": "Downloads verified against pinned checksums: CI fails until the checksums in the same defaults file are updated",
+            "matchPackageNames": ["ajeetdsouza/zoxide", "awslabs/amazon-ecr-credential-helper"],
+            "prBodyNotes": [
+                "⚠️ Update the SHA256 checksums next to the version in the role defaults (scripts/check-checksums.py prints the expected values)."
+            ]
+        },
+        {
+            "description": "The Ansible image of the project jobs and the local container are the same",
+            "matchPackageNames": ["alpine/ansible"],
+            "groupName": "ansible image"
         }
     ]
 }
