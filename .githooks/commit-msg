@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Deny-list check of the commit message before it becomes public (git config core.hooksPath .githooks)
+PR_BODY="$(grep -v '^#' "$1")" exec "$(git rev-parse --show-toplevel)/scripts/check-denylist.sh" --messages HEAD..HEAD
