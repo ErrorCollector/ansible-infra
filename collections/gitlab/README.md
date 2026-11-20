@@ -43,7 +43,7 @@ gitlab_hostname: gitlab.example.org
 gitlab_dir: /opt/gitlab
 gitlab_home: /srv/gitlab
 gitlab_ports: ["80:80", "443:443", "22:22", "5050:5050"]
-gitlab_env_template: "{{ playbook_dir }}/templates/gitlab.env.j2"
+gitlab_env_template: "{{ inventory_dir }}/templates/gitlab.env.j2"   # project root (playbook_dir is the collection)
 gitlab_backup_s3_bucket: gitlab-backup.example.org
 gitlab_omnibus_config: |
     gitlab_rails['smtp_password'] = '{{ vault_smtp_password }}'

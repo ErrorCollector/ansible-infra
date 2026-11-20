@@ -5,17 +5,20 @@
         mode: "0755"
     register: gitlab_dir_result
 
+# Modes as GitLab sets them itself, so the runs do not fight with the container
 -   name: Ensure gitlab data directories exist
     ansible.builtin.file:
-        path: "{{ gitlab_home }}/{{ item }}"
+        path: "{{ gitlab_home }}/{{ item.path }}"
         state: directory
-        mode: "0755"
+        mode: "{{ item.mode }}"
     loop:
-        - config
-        - logs
-        - data
-        - registry
-        - postgres_registry
+        - { path: config, mode: "0775" }
+        - { path: logs, mode: "0755" }
+        - { path: data, mode: "0755" }
+        - { path: registry, mode: "0770" }
+        - { path: postgres_registry, mode: "0755" }
+    loop_control:
+        label: "{{ gitlab_home }}/{{ item.path }}"
 
 # Secrets of the registry database and the backup sidecar, template from the project (gitlab_env_template).
 # diff: false keeps them out of make plan.
