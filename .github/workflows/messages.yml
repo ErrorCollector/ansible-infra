@@ -1,0 +1,28 @@
+name: Messages
+
+# Commit messages, PR title and PR description are public as well: same deny-list check as for the files.
+# Runs again when the PR title or description is edited.
+on:
+    pull_request:
+        types: [opened, edited, synchronize, reopened]
+    push:
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    messages:
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v7.0.1
+                with:
+                    fetch-depth: 0
+            -   name: No infrastructure names or IPs in commit messages and PR text
+                env:
+                    INFRA_DENYLIST: ${{ secrets.INFRA_DENYLIST }}
+                    PR_TITLE: ${{ github.event.pull_request.title }}
+                    PR_BODY: ${{ github.event.pull_request.body }}
+                    BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+                    HEAD: ${{ github.event.pull_request.head.sha || github.event.after }}
+                run: scripts/check-denylist.sh --messages "$BASE..$HEAD"

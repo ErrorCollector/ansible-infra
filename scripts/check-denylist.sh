@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Fails if tracked files contain infrastructure details that must stay in the (private) project repos.
+#   check-denylist.sh                        tracked and untracked files
+#   check-denylist.sh --messages <rev-range> commit messages of the range plus PR_TITLE and PR_BODY (env)
 #
 # - INFRA_DENYLIST: extended regex with domains/hostnames of the real infrastructure. Kept out of this public repo:
 #   GitHub Actions secret INFRA_DENYLIST, locally e.g. in ~/.config/ansible-infra/denylist (one pattern per line).
@@ -15,8 +17,17 @@ if [[ -z "$denylist" && -f "$local_file" ]]; then
 fi
 
 files=()
-# Files deleted in the working tree are still listed by git ls-files
-while IFS= read -r -d '' f; do [[ -f $f ]] && files+=("$f"); done < <(git ls-files -z --cached --others --exclude-standard -- ':!:*.png' ':!:scripts/check-denylist.sh')
+if [[ ${1:-} == --messages ]]; then
+    range="${2:?usage: check-denylist.sh --messages <rev-range>}"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    git log --format='commit %H%n%B' "$range" >"$tmp/commit-messages"
+    printf '%s\n' "${PR_TITLE:-}" "${PR_BODY:-}" >"$tmp/pull-request"
+    files=("$tmp/commit-messages" "$tmp/pull-request")
+else
+    # Files deleted in the working tree are still listed by git ls-files
+    while IFS= read -r -d '' f; do [[ -f $f ]] && files+=("$f"); done < <(git ls-files -z --cached --others --exclude-standard -- ':!:*.png' ':!:scripts/check-denylist.sh')
+fi
 [[ ${#files[@]} -gt 0 ]] || { echo "No files to check"; exit 0; }
 
 # grep exits 1 for "no match" only; anything else (unreadable file, bad regex) must not pass the check
