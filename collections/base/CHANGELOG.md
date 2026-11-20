@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.7.0...base-v0.8.0) (2026-11-20)
+
+
+### Features
+
+* **gitlab:** deploy the GitLab server from its own CI job ([#33](https://github.com/ErrorCollector/ansible-infra/issues/33)) ([466be63](https://github.com/ErrorCollector/ansible-infra/commit/466be63fc7d391c81788bfbac7931a18ae82e42f))
+
 ## [0.7.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.6.0...base-v0.7.0) (2026-11-20)
 
 
