@@ -4,23 +4,48 @@
     "include-component-in-tag": true,
     "tag-separator": "-",
     "bump-minor-pre-major": true,
-    "separate-pull-requests": true,
+    "separate-pull-requests": false,
     "packages": {
         "collections/base": {
             "component": "base",
-            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+            "extra-files": [
+                {
+                    "type": "yaml",
+                    "path": "galaxy.yml",
+                    "jsonpath": "$.version"
+                }
+            ]
         },
         "collections/pangolin": {
             "component": "pangolin",
-            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+            "extra-files": [
+                {
+                    "type": "yaml",
+                    "path": "galaxy.yml",
+                    "jsonpath": "$.version"
+                }
+            ]
         },
         "collections/gitlab": {
             "component": "gitlab",
-            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+            "extra-files": [
+                {
+                    "type": "yaml",
+                    "path": "galaxy.yml",
+                    "jsonpath": "$.version"
+                }
+            ]
         },
         "collections/web": {
             "component": "web",
-            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+            "extra-files": [
+                {
+                    "type": "yaml",
+                    "path": "galaxy.yml",
+                    "jsonpath": "$.version"
+                }
+            ]
         }
-    }
+    },
+    "group-pull-request-title-pattern": "chore: release ${branch}"
 }
