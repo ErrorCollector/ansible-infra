@@ -64,12 +64,14 @@ check-collections:
 # Collections
 # --------------------------------------------------
 
+# ansible-galaxy install takes role and collection requirements; they land in roles_path and
+# collections_path of the project ansible.cfg (./roles, ./collections)
 .PHONY: install
-install: check-docker ## Install the collections pinned in requirements.d/ (also undoes make dev)
+install: check-docker ## Install the collections and roles pinned in requirements.d/ (also undoes make dev)
 	@# make dev links are removed inside the container: base may be one of them and holds docker-compose.yaml
 	$(ANSIBLE_SH) 'command -v git >/dev/null || apk add -q --no-cache git; \
 		find $(COLLECTIONS_DIR) -mindepth 1 -maxdepth 1 -type l -exec rm {} \; 2>/dev/null; \
-		for file in requirements.d/*.yml; do ansible-galaxy collection install -r "$$file" -p collections --force || exit 1; done'
+		for file in requirements.d/*.yml; do ansible-galaxy install -r "$$file" --force || exit 1; done'
 
 .PHONY: versions
 versions: ## Pinned vs. installed collection versions
