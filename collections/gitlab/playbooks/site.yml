@@ -7,3 +7,7 @@
     roles:
         -   role: errorcollector.gitlab.gitlab_runner
             tags: [gitlab, gitlab_runner]
+        # last, only on a run of the whole domain: infra_collection_version for the drift alert
+        -   role: errorcollector.base.collection_version
+            collection_version_name: gitlab
+            tags: [gitlab]

@@ -1,0 +1,5 @@
+# Name of the collection without namespace (base, pangolin, web, gitlab), set by the domain playbook
+collection_version_name: ""
+# Root of the collection: the domain playbooks live in <collection>/playbooks
+collection_version_dir: "{{ playbook_dir | dirname }}"
+collection_version_textfile_dir: "{{ node_exporter_textfile_dir | default('/var/lib/node_exporter/textfile') }}"

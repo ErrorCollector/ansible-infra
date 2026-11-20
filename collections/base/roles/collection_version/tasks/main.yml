@@ -1,0 +1,25 @@
+# Runs on the controller: installed collections have MANIFEST.json, a dev link only galaxy.yml
+-   name: Read the collection version
+    ansible.builtin.set_fact:
+        collection_version_current: >-
+            {{ (lookup('ansible.builtin.file', collection_version_dir ~ '/MANIFEST.json') | from_json).collection_info.version
+               if (collection_version_dir ~ '/MANIFEST.json') is file
+               else (lookup('ansible.builtin.file', collection_version_dir ~ '/galaxy.yml') | from_yaml).version ~ '-dev' }}
+
+-   name: Ensure node_exporter textfile directory exists
+    ansible.builtin.file:
+        path: "{{ collection_version_textfile_dir }}"
+        state: directory
+        mode: "0755"
+
+# Bookkeeping only: not counted as a change, so make plan keeps showing what a deploy really changes
+-   name: Export the collection version
+    ansible.builtin.copy:
+        dest: "{{ collection_version_textfile_dir }}/infra_collection_{{ collection_version_name }}.prom"
+        content: |
+            # HELP infra_collection_version Version of the errorcollector collection last deployed to this host
+            # TYPE infra_collection_version gauge
+            infra_collection_version{collection="{{ collection_version_name }}",version="{{ collection_version_current }}"} 1
+        mode: "0644"
+    changed_when: false
+    diff: false

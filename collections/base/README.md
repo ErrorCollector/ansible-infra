@@ -87,6 +87,7 @@ warning; `make install` switches back to the pinned version.
 | `errorcollector.base.init` | – | first contact as root: provisioning user, SSH keys, no root login, Docker |
 | `errorcollector.base.common` | `base`, `common`, sub tags `shell`, `updates`, `firewall` | SSH keys, packages, registry logins, Docker log rotation, shell environment, dnf-automatic with update metrics, no firewalld |
 | `errorcollector.base.node_exporter` | `base`, `node_exporter`, `updates` | node_exporter with the textfile collector |
+| `errorcollector.base.collection_version` | domain tag | `infra_collection_version{collection,version}` of the deployed collection (textfile collector), run last by every domain playbook |
 | `errorcollector.base.reboot` | – | controlled reboot (`make reboot`, below) |
 
 The project `site.yml` imports `errorcollector.base.site` (common and node_exporter on all hosts). Project values:
@@ -161,3 +162,19 @@ deploy:pangolin:
   `.infra:after-deploy` with the same variables.
 - The Renovate regex manager for `requirements.d/` also needs `.gitlab-ci.yml` in its file patterns and a second
   match string for the `remote:` line, so the include and `requirements.d/base.yml` are updated in the same MR.
+
+## Collection versions on the hosts
+
+Each domain playbook ends with `errorcollector.base.collection_version`, tagged with the domain only: a run of the whole
+domain (`make deploy DOMAIN=…`, the CI deploy jobs, a full run) writes
+`infra_collection_version{collection="pangolin",version="0.2.0"} 1` to the textfile collector; runs with other tags keep
+the previous value. It never counts as a change in `make plan`. A dev link reports the galaxy.yml version with `-dev`.
+
+Alert on hosts of one project that run different versions of a collection (e.g. a forgotten local deploy of the
+GitLab server, or a host that was unreachable during the deploy):
+
+```yaml
+- alert: InfraCollectionVersionDrift
+  expr: count by (project, collection) (count by (project, collection, version) (infra_collection_version)) > 1
+  for: 2d
+```
