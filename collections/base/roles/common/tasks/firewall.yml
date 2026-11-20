@@ -1,0 +1,39 @@
+# Packet filtering is done by the cloud firewall, not on the host.
+# firewalld must not run anywhere: it blocks node_exporter (:9100) on the
+# private network. On EL, installing fail2ban pulls in fail2ban-firewalld ->
+# firewalld (enabled by preset, active after the next reboot), e.g. after
+# geerlingguy.security with its fail2ban default.
+
+-   name: Check whether firewalld is installed  # noqa: command-instead-of-module (read-only query, package_facts would load every package)
+    ansible.builtin.command: rpm -q firewalld
+    register: common_firewalld_rpm
+    changed_when: false
+    failed_when: false
+    check_mode: false
+
+-   name: Remove firewalld
+    when: common_firewalld_rpm.rc == 0
+    block:
+        -   name: Stop and disable firewalld
+            ansible.builtin.systemd_service:
+                name: firewalld
+                state: stopped
+                enabled: false
+
+        -   name: Remove firewalld and fail2ban
+            ansible.builtin.dnf:
+                name:
+                    - firewalld
+                    - fail2ban
+                    - fail2ban-firewalld
+                    - fail2ban-server
+                    - fail2ban-selinux
+                    - fail2ban-sendmail
+                state: absent
+
+        # Docker registered its rules with firewalld; a restart rebuilds them
+        # with plain iptables. Restarts all containers (short outage).
+        -   name: Restart Docker without firewalld
+            ansible.builtin.systemd_service:
+                name: docker
+                state: restarted

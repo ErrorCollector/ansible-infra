@@ -1,0 +1,15 @@
+argument_specs:
+    main:
+        short_description: First contact with a new host as root
+        description:
+            - Creates the provisioning user with passwordless sudo and SSH keys, disables the root login over SSH and
+              installs Docker. Run it as root (C(ansible_user=root)) before everything else.
+        options:
+            init_user:
+                type: str
+                default: provisioning
+                description: User for all later runs.
+            init_ssh_keys:
+                type: list
+                elements: str
+                description: Its public keys, default C(common_ssh_keys).

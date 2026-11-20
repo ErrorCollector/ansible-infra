@@ -1,0 +1,53 @@
+-   name: Install SSH keys for provisioning user
+    ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        key: "{{ item }}"
+    loop: "{{ common_ssh_keys + common_extra_ssh_keys }}"
+    loop_control:
+        label: "{{ item.split(' ')[-1] }}"
+
+-   name: Enable EPEL repository
+    ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+-   name: Install common packages
+    ansible.builtin.dnf:
+        name: "{{ common_packages }}"
+        state: present
+        update_cache: true
+
+-   name: Log in to container registries
+    community.docker.docker_login:
+        registry_url: "{{ item.url | default(omit) }}"
+        username: "{{ item.username }}"
+        password: "{{ item.password }}"
+    loop: "{{ common_docker_registries }}"
+    loop_control:
+        label: "{{ item.url | default('Docker Hub') }}"
+    no_log: true
+
+# Rotate container logs, applies to newly created containers only.
+# Off where another role owns daemon.json (e.g. GitLab runners with their own data-root).
+-   name: Deploy docker daemon.json
+    ansible.builtin.template:
+        src: daemon.json.j2
+        dest: /etc/docker/daemon.json
+        mode: "0644"
+    notify: Restart docker
+    when: common_docker_daemon_json | bool
+
+# zoxide, aliases, prompt; roll out alone with: --tags shell
+-   name: Shell environment for all users
+    ansible.builtin.import_tasks: shell.yml
+    tags: shell
+
+# dnf-automatic + update/reboot metrics; roll out alone with: --tags updates
+-   name: Automatic OS updates
+    ansible.builtin.import_tasks: updates.yml
+    tags: updates
+
+# no firewalld (the cloud firewall does the filtering); roll out alone with: --tags firewall
+-   name: Host firewall
+    ansible.builtin.import_tasks: firewall.yml
+    tags: firewall

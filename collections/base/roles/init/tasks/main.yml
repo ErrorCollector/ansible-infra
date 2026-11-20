@@ -1,0 +1,67 @@
+# First contact with a new host as root: provisioning user with sudo and SSH keys, no root login, Docker.
+# Everything afterwards runs as the provisioning user (errorcollector.base.common and the other roles).
+-   name: Enable EPEL repository
+    ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+-   name: Create provisioning user
+    ansible.builtin.user:
+        name: "{{ init_user }}"
+        groups: wheel
+        shell: /bin/bash
+        create_home: true
+
+-   name: Install SSH keys for provisioning user
+    ansible.posix.authorized_key:
+        user: "{{ init_user }}"
+        key: "{{ item }}"
+    loop: "{{ init_ssh_keys }}"
+    loop_control:
+        label: "{{ item.split(' ')[-1] }}"
+
+-   name: Allow passwordless sudo for provisioning
+    ansible.builtin.copy:
+        dest: "/etc/sudoers.d/{{ init_user }}"
+        content: "{{ init_user }} ALL=(ALL) NOPASSWD: ALL\n"
+        owner: root
+        group: root
+        mode: "0440"
+        validate: /usr/sbin/visudo -cf %s
+
+-   name: Disable root SSH login
+    ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        validate: /usr/sbin/sshd -t -f %s
+    notify: Restart ssh
+
+-   name: Add Docker repo
+    ansible.builtin.get_url:
+        url: https://download.docker.com/linux/rhel/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: "0644"
+
+-   name: Install Docker packages
+    ansible.builtin.dnf:
+        name:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+            - docker-compose-plugin
+            - docker-buildx-plugin
+        state: present
+    notify: Restart docker
+
+-   name: Enable and start Docker
+    ansible.builtin.service:
+        name: docker
+        enabled: true
+        state: started
+
+-   name: Add provisioning user to docker group
+    ansible.builtin.user:
+        name: "{{ init_user }}"
+        groups: docker
+        append: true

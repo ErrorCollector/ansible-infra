@@ -1,0 +1,16 @@
+services:
+    node_exporter:
+        image: {{ node_exporter_image }}:{{ node_exporter_version }}
+        container_name: node_exporter
+        command:
+            - '--collector.systemd'
+            - '--path.rootfs=/host'
+            - '--collector.textfile.directory=/host{{ node_exporter_textfile_dir }}'
+        labels:
+            hostname: "{{ inventory_hostname }}"
+        network_mode: host
+        pid: host
+        restart: unless-stopped
+        volumes:
+            - '/:/host:ro,rslave'
+            - '/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket'

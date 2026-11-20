@@ -1,0 +1,22 @@
+argument_specs:
+    main:
+        short_description: Prometheus node_exporter in Docker
+        description:
+            - Host network C(:9100), systemd collector and the textfile collector for the update metrics of
+              C(errorcollector.base.common). The container is only recreated when its compose file changes.
+        options:
+            node_exporter_dir:
+                type: str
+                default: /opt/node_exporter
+                description: Directory of the compose project.
+            node_exporter_textfile_dir:
+                type: str
+                default: /var/lib/node_exporter/textfile
+                description: Textfile collector directory.
+            node_exporter_version:
+                type: str
+                description: Image tag.
+            node_exporter_image:
+                type: str
+                default: quay.io/prometheus/node-exporter
+                description: Image without tag.

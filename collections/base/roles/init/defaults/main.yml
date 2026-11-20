@@ -1,0 +1,3 @@
+init_user: provisioning
+# Defaults to the keys errorcollector.base.common installs later
+init_ssh_keys: "{{ common_ssh_keys | default([]) }}"

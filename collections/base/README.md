@@ -80,6 +80,32 @@ warning; `make install` switches back to the pinned version.
 
 `DOMAIN` selects the domain tag (`base`, `pangolin`, `gitlab`, `web`), `TAGS` a role or sub tag and wins over `DOMAIN`.
 
+## Roles
+
+| Role | Tags | |
+|---|---|---|
+| `errorcollector.base.init` | – | first contact as root: provisioning user, SSH keys, no root login, Docker |
+| `errorcollector.base.common` | `base`, `common`, sub tags `shell`, `updates`, `firewall` | SSH keys, packages, registry logins, Docker log rotation, shell environment, dnf-automatic with update metrics, no firewalld |
+| `errorcollector.base.node_exporter` | `base`, `node_exporter`, `updates` | node_exporter with the textfile collector |
+| `errorcollector.base.reboot` | – | controlled reboot (`make reboot`, below) |
+
+The project `site.yml` imports `errorcollector.base.site` (common and node_exporter on all hosts). Project values:
+
+```yaml
+# group_vars/all
+infra_brand: example                   # file and unit names: /etc/profile.d/example-prompt.sh, example-update-status.timer
+common_ssh_keys:
+    - "ssh-ed25519 AAAA... admin@example.org"
+common_packages: [sudo, git, htop]
+common_docker_registries:
+    -   url: https://registry.example.org
+        username: pull-user
+        password: "{{ registry_pull_token }}"   # vault
+```
+
+Update metrics (textfile collector, refreshed hourly): `infra_reboot_required`, `infra_os_updates_pending`,
+`infra_update_status_success`, `infra_update_status_query_success{query=…}`, `infra_update_status_timestamp_seconds`.
+
 ## Reboot
 
 `errorcollector.base.reboot` reboots only when `dnf needs-restarting -r` says so and checks afterwards that all

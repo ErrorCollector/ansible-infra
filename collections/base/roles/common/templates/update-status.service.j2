@@ -1,0 +1,9 @@
+# Managed by Ansible (errorcollector.base.common)
+[Unit]
+Description=Write OS update metrics for node_exporter
+After=network-online.target
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=/usr/local/sbin/{{ infra_brand }}-update-status {{ common_textfile_dir }}
