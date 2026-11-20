@@ -19,6 +19,12 @@ gitlab_registry_db_user: "{{ postgres_user | default('registry') }}"
 #   gitlab_env_template: "{{ inventory_dir }}/templates/gitlab.env.j2"   (playbook_dir is the collection here)
 gitlab_env_template: ""
 
+# gitlab-ctl backup-etc and gitlab-backup create before a version change (not before config changes)
+gitlab_backup_before_upgrade: true
+gitlab_backup_before_upgrade_skip: registry,artifacts
+# Seconds to wait for healthy containers after docker compose up
+gitlab_wait_timeout: 900
+
 # Sidecar that backs up postgres_registry, empty = none
 gitlab_backup_image: ""
 

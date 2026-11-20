@@ -15,7 +15,7 @@ collections:
 
 | Role | Tags | Inventory group | |
 |---|---|---|---|
-| `errorcollector.gitlab.gitlab` | `gitlab`, `gitlab_server` | `gitlab_server` | GitLab CE (omnibus) with registry metadata database and backup cron jobs; **local deploys only** |
+| `errorcollector.gitlab.gitlab` | `gitlab`, `gitlab_server` | `gitlab_server` | GitLab CE (omnibus) with registry metadata database and backup cron jobs; **own CI button or local deploys only** |
 | `errorcollector.gitlab.gitlab_runner` | `gitlab`, `gitlab_runner` | `gitlab_runners` | GitLab Runner (docker executor), local or S3 cache, optional ECR pull, optional Docker data volume, cleanup timer |
 
 The project `site.yml` imports `errorcollector.gitlab.site` (runners). Docker is only restarted when `daemon.json` or the
@@ -28,8 +28,25 @@ gitlab_runner_url: https://gitlab.example.org
 # host_vars/<runner>: gitlab_runner_id, gitlab_runner_concurrent; vault: gitlab_runner_token
 ```
 
-The GitLab server comes from a separate playbook, never from CI: `ci-deploy` excludes the group `gitlab_server` and the
-role refuses to run under GitLab CI (dry runs are fine). Deploy it locally before its runners:
+The GitLab server comes from a separate playbook. In CI it only gets deployed by a job of its own: `ci-deploy` excludes
+the group `gitlab_server` and the role refuses to run under GitLab CI unless the job sets `INFRA_GITLAB_SERVER: "true"`
+and `HOSTS: <server>` (dry runs are fine). That job restarts the GitLab that runs it: the runner keeps running the
+playbook and reports back once GitLab is up again; the role waits until GitLab is healthy. If an upgrade breaks
+GitLab there is no pipeline left, so the local deploy stays the fallback. Deploy the server before its runners.
+
+Before a version change the role backs up the running GitLab (`gitlab-ctl backup-etc`, `gitlab-backup create` with
+`SKIP=registry,artifacts` to `backup_upload_connection`; `gitlab_backup_before_upgrade`). Config changes do not
+trigger it.
+
+```yaml
+# .gitlab-ci.yml of the project (include of errorcollector.base)
+deploy:gitlab:server:
+    extends: .infra:deploy
+    variables:
+        DOMAIN: gitlab
+        HOSTS: gitlab
+        INFRA_GITLAB_SERVER: "true"
+```
 
 ```yaml
 # site.yml of the project

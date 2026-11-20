@@ -1,9 +1,11 @@
 argument_specs:
     main:
-        short_description: GitLab CE (omnibus) in Docker, deployed locally only
+        short_description: GitLab CE (omnibus) in Docker
         description:
             - GitLab with the omnibus config of the project, registry metadata database and backup cron jobs to S3.
-              Refuses to deploy under GitLab CI (dry runs are fine); the domain playbook errorcollector.gitlab.server runs it.
+              Under GitLab CI it only deploys in a job with INFRA_GITLAB_SERVER=true (dry runs are fine); the domain
+              playbook errorcollector.gitlab.server runs it.
+            - Backs up the running GitLab before a version change and waits until it is healthy again.
             - A new version or omnibus config recreates GitLab (minutes of downtime). Update the runners afterwards.
         options:
             gitlab_hostname:
@@ -44,6 +46,15 @@ argument_specs:
             gitlab_env_template:
                 type: str
                 description: Template of the .env of the compose project (project path), empty for none.
+            gitlab_backup_before_upgrade:
+                type: bool
+                description: gitlab-ctl backup-etc and gitlab-backup create before a version change.
+            gitlab_backup_before_upgrade_skip:
+                type: str
+                description: SKIP of that gitlab-backup.
+            gitlab_wait_timeout:
+                type: int
+                description: Seconds to wait for healthy containers.
             gitlab_backup_image:
                 type: str
                 description: Backup sidecar image, empty for none.

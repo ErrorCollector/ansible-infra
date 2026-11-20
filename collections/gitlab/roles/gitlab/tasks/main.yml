@@ -1,9 +1,11 @@
-# The GitLab server is deployed locally only: a CI job would update the GitLab that runs it.
-# Dry runs (--check, make plan) are fine.
--   name: Refuse to deploy the GitLab server from GitLab CI
+# A CI job restarts the GitLab that runs it: only a job of its own may deploy the server (INFRA_GITLAB_SERVER=true,
+# see extras/gitlab-ci.yml of errorcollector.base). Dry runs (--check, make plan) and local deploys are fine.
+-   name: Refuse to deploy the GitLab server from other GitLab CI jobs
     ansible.builtin.assert:
-        that: lookup('ansible.builtin.env', 'GITLAB_CI') | length == 0
-        fail_msg: "The GitLab server is deployed locally only: make deploy DOMAIN=gitlab HOSTS=<server>"
+        that: >-
+            lookup('ansible.builtin.env', 'GITLAB_CI') | length == 0
+            or lookup('ansible.builtin.env', 'INFRA_GITLAB_SERVER') == 'true'
+        fail_msg: "The GitLab server needs its own deploy job (INFRA_GITLAB_SERVER=true) or a local deploy: make deploy DOMAIN=gitlab HOSTS=<server>"
         quiet: true
     when: not ansible_check_mode
 

@@ -149,8 +149,9 @@ deploy:pangolin:
   are readable for every developer of the project and not every template keeps its secrets out of the diff; the
   full diff comes from `make plan` locally.
 - `.infra:deploy` (stage `deploy`): manual job on the default branch, environment `production`, one deploy at a time
-  per project (`resource_group`). `HOSTS` limits it (e.g. a canary group); the inventory group `gitlab_server` is
-  always excluded, the GitLab server is deployed locally only.
+  per project (`resource_group`). `HOSTS` limits it; the inventory group `gitlab_server` is excluded unless the job
+  sets `INFRA_GITLAB_SERVER: "true"` and `HOSTS: <server>`. Give the GitLab server a button of its own (it restarts
+  the GitLab that runs the job) and keep `make deploy` locally as fallback.
 - Protected file variables of the project: `INFRA_SSH_KEY` (private key of `provisioning`), `INFRA_VAULT_PASS` and
   `INFRA_KNOWN_HOSTS` (known_hosts of all hosts; host key checking is always on in CI, the jobs fail without it). Use these names rather than `ANSIBLE_*`: with a protected project
   variable of the same name, unprotected branches would silently fall back to a group or instance variable.
