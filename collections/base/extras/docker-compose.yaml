@@ -1,0 +1,12 @@
+# Ansible runner for the project Makefiles (extras/Makefile.inc).
+# Started with --project-directory <project repo>, so ./ is the project repo.
+services:
+    ansible:
+        image: alpine/ansible:2.21.0
+        volumes:
+            - ./:/work
+            - ~/.ssh:/root/.ssh:ro
+        working_dir: /work
+        environment:
+            ANSIBLE_HOST_KEY_CHECKING: "False"
+            ANSIBLE_SSH_KEY_FILE: ${ANSIBLE_SSH_KEY_FILE:-}

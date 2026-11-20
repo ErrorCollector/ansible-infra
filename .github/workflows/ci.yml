@@ -22,8 +22,16 @@ jobs:
             -   name: yamllint
                 run: yamllint --strict .
             -   name: ansible-lint (per collection)
+                # The collections are linked into ansible-lint's collection path, so playbooks
+                # find their roles by FQCN (errorcollector.base.reboot). The yamllint config is
+                # in the repo root, ansible-lint only looks into the working directory.
                 run: |
                     rc=0
+                    export YAMLLINT_CONFIG_FILE="$PWD/.yamllint"
+                    mkdir -p .ansible/collections/ansible_collections/errorcollector
+                    for c in collections/*/; do
+                        ln -sfn "$PWD/${c%/}" ".ansible/collections/ansible_collections/errorcollector/$(basename "$c")"
+                    done
                     for c in collections/*/; do
                         echo "::group::$c"
                         (cd "$c" && ansible-lint) || rc=1

@@ -1,0 +1,19 @@
+# Reboot even if `dnf needs-restarting -r` says it is not required (make reboot FORCE=1)
+reboot_force: false
+reboot_timeout: 900
+
+# node_exporter check after the reboot. With a monitoring host and node_exporter_address
+# (host_vars) it runs inside the Prometheus container there, otherwise against 127.0.0.1.
+reboot_node_exporter_check: true
+reboot_monitoring_host: ""
+reboot_prometheus_container: prometheus
+
+# Refreshes the update metrics right after the reboot
+reboot_update_status_service: "{{ infra_brand | default('infra') }}-update-status.service"
+
+# Containers on other hosts to restart after this host rebooted, set in host_vars, e.g. on the
+# Pangolin host (Newt does not rebuild its tunnel on its own):
+#   reboot_restart_after:
+#       -   container: newt
+#           hosts: "{{ groups['newt'] }}"
+reboot_restart_after: []
