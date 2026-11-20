@@ -92,8 +92,11 @@
         -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
             changes: *infra_changes
             when: manual
+    # One environment per deploy job: "Prevent outdated deployment jobs" only blocks a button once the same job ran in a
+    # newer pipeline. With a shared environment any later deploy would block the open buttons of older pipelines, and
+    # with rules:changes a domain's button often only exists in an older pipeline.
     environment:
-        name: production
+        name: production/$CI_JOB_NAME_SLUG
     resource_group: infra-deploy
     script:
         - make ci-deploy
