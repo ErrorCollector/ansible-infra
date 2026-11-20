@@ -5,7 +5,7 @@ version: 0.1.0
 readme: README.md
 authors:
     - Eric Hertwig <eric@ehdev.de>
-description: "Traefik reverse proxy and generic Docker Compose projects"
+description: "Traefik reverse proxy"
 license:
     - MIT
 tags:

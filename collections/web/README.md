@@ -1,6 +1,6 @@
 # errorcollector.web
 
-Traefik reverse proxy and generic Docker Compose projects.
+Traefik reverse proxy.
 
 Part of [ansible-infra](https://github.com/ErrorCollector/ansible-infra). Install a released version (tag `web-vX.Y.Z`):
 
