@@ -162,6 +162,11 @@ deploy:pangolin:
   Jobs without a domain set their own `INFRA_CHANGES` (glob with `{a,b}`, e.g. their role and host_vars). A pipeline
   started by hand (*Run pipeline*), by the API or a schedule has every job. Jobs that follow a deploy extend
   `.infra:after-deploy` with the same variables.
+- `.infra:status` and `.infra:reboot` only exist in pipelines started by hand (*Run pipeline*), by the API or a
+  schedule on the default branch. `status` runs `os-info` and `reboot-status` and ends as warning (exit code 3) when
+  hosts need a reboot. `reboot` (`make ci-reboot`, `HOSTS` required) reboots only the hosts that need it, one at a
+  time, and shares the `resource_group` with the deploys. Like deploys it leaves out `gitlab_server` unless
+  `INFRA_GITLAB_SERVER` is set; a runner must not reboot itself (bind the job to another runner with `tags`).
 - The Renovate regex manager for `requirements.d/` also needs `.gitlab-ci.yml` in its file patterns and a second
   match string for the `remote:` line, so the include and `requirements.d/base.yml` are updated in the same MR.
 

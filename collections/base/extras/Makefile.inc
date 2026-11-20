@@ -147,13 +147,21 @@ ci-plan: check-vault check-collections ## CI: dry run (changed tasks per host, n
 		END { if (!found) print "  no changes" }' | (echo "Hosts with changes:"; cat)
 
 .PHONY: ci-deploy
-ci-deploy: check-vault check-collections ## CI: roll out without the GitLab server: [DOMAIN=…] [HOSTS=…|all] [INFRA_GITLAB_SERVER=true HOSTS=<server>]
+ci-deploy: check-ci check-vault check-collections ## CI: roll out without the GitLab server: [DOMAIN=…] [HOSTS=…|all] [INFRA_GITLAB_SERVER=true HOSTS=<server>]
+	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(CI_LIMIT) $(TAGS_ARG) $(PLAYBOOK)
+
+.PHONY: ci-reboot
+ci-reboot: check-ci check-vault check-collections ## CI: reboot the hosts that need it, one at a time, without the GitLab server: HOSTS=… [FORCE=1] [INFRA_GITLAB_SERVER=true]
+	@test -n "$(HOSTS)" || (echo "❌ HOSTS is required (a runner must not reboot itself, see extras/gitlab-ci.yml)"; exit 1)
+	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(CI_LIMIT) $(if $(FORCE),-e reboot_force=true) errorcollector.base.reboot
+
+.PHONY: check-ci
+check-ci:
 ifndef GITLAB_CI
-	$(error ci-deploy only runs in GitLab CI, locally: make deploy)
+	$(error ci-deploy and ci-reboot only run in GitLab CI, locally: make deploy / make reboot)
 endif
 	@if [ "$(INFRA_GITLAB_SERVER)" = true ] && { [ -z "$(HOSTS)" ] || [ "$(HOSTS)" = all ]; }; then \
 		echo "❌ INFRA_GITLAB_SERVER=true needs HOSTS=<server>"; exit 1; fi
-	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(CI_LIMIT) $(TAGS_ARG) $(PLAYBOOK)
 
 # --------------------------------------------------
 # Hosts

@@ -44,6 +44,25 @@
 #           INFRA_CHANGES: "{roles/example.monitor/**/*,host_vars/monitor/**/*}"
 #
 # Pipelines started by hand (Build > Pipelines > Run pipeline), by the API or a schedule have every job.
+#
+# Status and reboots do not depend on a change, they only exist in such pipelines on the default branch:
+#
+#   status:
+#       extends: .infra:status          # os-info and reboot-status, a warning (exit code 3) when hosts need a reboot
+#
+#   reboot:
+#       extends: .infra:reboot          # only hosts that need it, one at a time
+#       variables:
+#           HOSTS: "all,!gitlab_runners"
+#
+#   reboot:runner01:                    # a runner must not reboot itself: run it on another one
+#       extends: .infra:reboot
+#       tags: [arm64]
+#       variables:
+#           HOSTS: runner01
+#
+# The GitLab server needs INFRA_GITLAB_SERVER as for deploys. A schedule (Build > Pipeline schedules) runs status
+# regularly; plans run as well, reboot buttons stay manual.
 # Jobs that follow a deploy (e.g. a notification with needs: deploy:<domain>) extend .infra:after-deploy and set
 # the same DOMAIN/INFRA_CHANGES, so they exist exactly when the deploy job does.
 
@@ -107,3 +126,29 @@
     rules:
         -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
             changes: *infra_changes
+
+.infra:status:
+    extends: .infra:job
+    stage: test
+    rules:
+        -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE =~ /^(web|api|schedule)$/
+    # hosts that need a reboot show as warning, not as failed pipeline
+    allow_failure:
+        exit_codes: [3]
+    script:
+        # column and sort -V for the tables
+        - apk add -q --no-cache coreutils util-linux-misc
+        - make os-info
+        - make reboot-status | tee reboot-status.log
+        - if grep -q '^→ make reboot' reboot-status.log; then exit 3; fi
+
+.infra:reboot:
+    extends: .infra:job
+    stage: deploy
+    rules:
+        -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE =~ /^(web|api|schedule)$/
+            when: manual
+    # never at the same time as a deploy
+    resource_group: infra-deploy
+    script:
+        - make ci-reboot
