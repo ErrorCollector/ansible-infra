@@ -15,13 +15,24 @@ if [[ -z "$denylist" && -f "$local_file" ]]; then
 fi
 
 files=()
-while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z --cached --others --exclude-standard -- ':!:*.png' ':!:scripts/check-denylist.sh')
+# Files deleted in the working tree are still listed by git ls-files
+while IFS= read -r -d '' f; do [[ -f $f ]] && files+=("$f"); done < <(git ls-files -z --cached --others --exclude-standard -- ':!:*.png' ':!:scripts/check-denylist.sh')
 [[ ${#files[@]} -gt 0 ]] || { echo "No files to check"; exit 0; }
+
+# grep exits 1 for "no match" only; anything else (unreadable file, bad regex) must not pass the check
+search() {
+    local status=0
+    grep -n "$@" "${files[@]}" || status=$?
+    [[ $status -le 1 ]] || { echo "❌ grep failed ($status)" >&2; exit 2; }
+}
 
 rc=0
 
 if [[ -n "$denylist" ]]; then
-    if grep -n -i -E -- "$denylist" "${files[@]}"; then
+    # Plain assignment: set -e stops the script if search exits 2
+    hits="$(search -i -E -- "$denylist")"
+    if [[ -n $hits ]]; then
+        echo "$hits"
         echo "❌ Infrastructure names found (INFRA_DENYLIST), move them to the project repos" >&2
         rc=1
     fi
@@ -30,8 +41,10 @@ else
 fi
 
 ip='\b([0-9]{1,3}\.){3}[0-9]{1,3}\b'
-allowed='\b(127\.0\.0\.1|0\.0\.0\.0|192\.0\.2\.[0-9]+|198\.51\.100\.[0-9]+|203\.0\.113\.[0-9]+)\b'
-if grep -n -E -- "$ip" "${files[@]}" | grep -v -E -- "$allowed" | grep -E -- "$ip"; then
+allowed=':(127\.0\.0\.1|0\.0\.0\.0|192\.0\.2\.[0-9]+|198\.51\.100\.[0-9]+|203\.0\.113\.[0-9]+)$'
+# One line per address (file:line:address), so an allowed address does not hide another one in the same line
+ip_hits="$(search -o -E -- "$ip")"
+if grep -v -E -- "$allowed" <<<"$ip_hits" | grep -E -- "$ip"; then
     echo "❌ IP addresses found, use variables (documentation ranges 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 are fine)" >&2
     rc=1
 fi

@@ -1,0 +1,129 @@
+-   name: Reboot host
+    block:
+        # Turns an unreachable host into a (rescuable) failure: with serial: 1
+        # an unreachable host would end the whole play.
+        -   name: Host reachable
+            ansible.builtin.wait_for_connection:
+                timeout: 30
+
+        -   name: Check whether a reboot is required
+            ansible.builtin.command: dnf -q needs-restarting -r
+            register: reboot_needs_restarting
+            changed_when: false
+            check_mode: false
+            failed_when: reboot_needs_restarting.rc not in [0, 1]
+
+        -   name: Reboot status
+            ansible.builtin.debug:
+                msg: "{{ 'Reboot required' if reboot_needs_restarting.rc == 1 else 'No reboot required' ~ (' -> forced' if reboot_force | bool else '') }}"
+
+        -   name: Reboot and verify
+            when: reboot_needs_restarting.rc == 1 or reboot_force | bool
+            block:
+                -   name: Remember containers that must come back
+                    ansible.builtin.shell: >-
+                        set -o pipefail;
+                        docker ps -q | xargs -r docker inspect
+                        --format '{% raw %}{{ .Name }} {{ .HostConfig.RestartPolicy.Name }}{% endraw %}'
+                        | awk '$2 == "always" || $2 == "unless-stopped" { sub("^/", "", $1); print $1 }'
+                    args:
+                        executable: /bin/bash
+                    register: reboot_containers_before
+                    changed_when: false
+
+                -   name: Remember healthy containers
+                    ansible.builtin.command: docker ps --filter health=healthy --format '{% raw %}{{ .Names }}{% endraw %}'
+                    register: reboot_healthy_before
+                    changed_when: false
+
+                -   name: Kernel before reboot
+                    ansible.builtin.command: uname -r
+                    register: reboot_kernel_before
+                    changed_when: false
+
+                -   name: Reboot
+                    ansible.builtin.reboot:
+                        msg: "Reboot by Ansible (make reboot)"
+                        reboot_timeout: "{{ reboot_timeout }}"
+
+                -   name: Wait until all containers are running again
+                    ansible.builtin.command: docker ps --format '{% raw %}{{ .Names }}{% endraw %}'
+                    register: reboot_containers_after
+                    changed_when: false
+                    until: reboot_containers_before.stdout_lines | difference(reboot_containers_after.stdout_lines) | length == 0
+                    retries: 30
+                    delay: 10
+
+                -   name: Wait until the containers that were healthy are healthy again
+                    ansible.builtin.command: docker ps --filter health=healthy --format '{% raw %}{{ .Names }}{% endraw %}'
+                    register: reboot_healthy_after
+                    changed_when: false
+                    until: reboot_healthy_before.stdout_lines | difference(reboot_healthy_after.stdout_lines) | length == 0
+                    retries: 30
+                    delay: 5
+
+                # Same address Prometheus scrapes: catches a host firewall that only comes up
+                # after the reboot (firewalld, 2026-11) or a broken Pangolin tunnel.
+                # Runs inside the Prometheus container: Pangolin aliases (*.internal)
+                # only resolve via its DNS, not on the monitoring host.
+                -   name: Node_exporter reachable from Prometheus
+                    ansible.builtin.command: >-
+                        docker exec {{ reboot_prometheus_container }}
+                        wget -q -O /dev/null -T 5 "http://{{ node_exporter_address }}:9100/metrics"
+                    register: reboot_node_exporter_remote
+                    until: reboot_node_exporter_remote.rc == 0
+                    retries: 6
+                    delay: 5
+                    changed_when: false
+                    delegate_to: "{{ reboot_monitoring_host }}"
+                    when:
+                        - reboot_node_exporter_check | bool
+                        - reboot_monitoring_host | length > 0
+                        - node_exporter_address is defined
+
+                # Without a monitoring host only locally: misses firewall and tunnel problems
+                -   name: Node_exporter answers locally
+                    ansible.builtin.uri:
+                        url: http://127.0.0.1:9100/metrics
+                        timeout: 5
+                    register: reboot_node_exporter_local
+                    until: reboot_node_exporter_local.status == 200
+                    retries: 6
+                    delay: 5
+                    when:
+                        - reboot_node_exporter_check | bool
+                        - reboot_monitoring_host | length == 0 or node_exporter_address is not defined
+
+                -   name: Restart dependent containers on other hosts
+                    ansible.builtin.command: docker restart {{ item.0.container }}
+                    delegate_to: "{{ item.1 }}"
+                    loop: "{{ reboot_restart_after | subelements('hosts') }}"
+                    loop_control:
+                        label: "{{ item.1 }}: {{ item.0.container }}"
+                    changed_when: true
+
+                -   name: Kernel after reboot
+                    ansible.builtin.command: uname -r
+                    register: reboot_kernel_after
+                    changed_when: false
+
+                -   name: Result
+                    ansible.builtin.debug:
+                        msg: >-
+                            Kernel {{ reboot_kernel_before.stdout }} -> {{ reboot_kernel_after.stdout }},
+                            {{ reboot_containers_before.stdout_lines | length }} containers running again
+
+                -   name: Refresh update status metrics
+                    ansible.builtin.systemd_service:
+                        name: "{{ reboot_update_status_service }}"
+                        state: started
+                    changed_when: false
+                    failed_when: false
+    rescue:
+        -   name: Remember failure, continue with next host
+            ansible.builtin.set_fact:
+                reboot_failure: "{{ ansible_failed_task.name }}: {{ ansible_failed_result.msg | default('failed') }}"
+
+        -   name: Failure
+            ansible.builtin.debug:
+                var: reboot_failure

@@ -1,0 +1,50 @@
+argument_specs:
+    main:
+        short_description: Controlled reboot of one host, only when needed
+        description:
+            - Reboots when C(dnf needs-restarting -r) reports it (or I(reboot_force)) and verifies that containers,
+              health checks and node_exporter come back.
+            - "Failures are rescued and stored in C(reboot_failure), so with C(serial: 1) the other hosts continue.
+              The playbook C(errorcollector.base.reboot) fails those hosts at the end."
+        options:
+            reboot_force:
+                type: bool
+                default: false
+                description: Reboot even if no reboot is required.
+            reboot_timeout:
+                type: int
+                default: 900
+                description: Seconds to wait for the host to come back.
+            reboot_node_exporter_check:
+                type: bool
+                default: true
+                description: Check that node_exporter answers after the reboot.
+            reboot_monitoring_host:
+                type: str
+                default: ""
+                description:
+                    - Host running the Prometheus container. With C(node_exporter_address) set for the rebooted host,
+                      the check runs there against the address Prometheus scrapes.
+            reboot_prometheus_container:
+                type: str
+                default: prometheus
+                description: Name of the Prometheus container on I(reboot_monitoring_host).
+            reboot_update_status_service:
+                type: str
+                default: "{{ infra_brand | default('infra') }}-update-status.service"
+                description: Service that refreshes the update metrics, started after the reboot if it exists.
+            reboot_restart_after:
+                type: list
+                elements: dict
+                default: []
+                description: Containers on other hosts to restart after this host rebooted.
+                options:
+                    container:
+                        type: str
+                        required: true
+                        description: Container name.
+                    hosts:
+                        type: list
+                        elements: str
+                        required: true
+                        description: Hosts running the container.

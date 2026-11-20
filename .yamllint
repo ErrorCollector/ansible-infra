@@ -1,6 +1,7 @@
 extends: default
 
-ignore-from-file: .gitignore
+ignore: |
+    .ansible/
 
 rules:
     # list style of the project repos: "-   name: ..."
