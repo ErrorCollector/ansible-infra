@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.4.0...base-v0.4.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **base:** CI jobs bootstrap the collection and accept keys without final newline ([#18](https://github.com/ErrorCollector/ansible-infra/issues/18)) ([c2f3a60](https://github.com/ErrorCollector/ansible-infra/commit/c2f3a60e940661a526024362d203c15571f652c4))
+
 ## [0.4.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.3.0...base-v0.4.0) (2026-11-20)
 
 
