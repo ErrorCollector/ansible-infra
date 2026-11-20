@@ -7,3 +7,6 @@
     roles:
         -   role: errorcollector.gitlab.gitlab
             tags: [gitlab, gitlab_server]
+        -   role: errorcollector.base.collection_version
+            collection_version_name: gitlab
+            tags: [gitlab]

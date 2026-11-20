@@ -8,3 +8,7 @@
             tags: [base, common]
         -   role: errorcollector.base.node_exporter
             tags: [base, node_exporter, updates]
+        # last, only on a run of the whole domain: infra_collection_version for the drift alert
+        -   role: errorcollector.base.collection_version
+            collection_version_name: base
+            tags: [base]

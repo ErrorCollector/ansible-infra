@@ -1,0 +1,20 @@
+argument_specs:
+    main:
+        short_description: Export the deployed version of a collection to the node_exporter textfile collector
+        description:
+            - Writes C(infra_collection_version{collection="<name>",version="<x.y.z>"} 1) to
+              C(<textfile dir>/infra_collection_<name>.prom). The domain playbooks run it last, tagged with the domain only,
+              so partial runs (other tags) keep the previous version.
+            - The version comes from MANIFEST.json of the installed collection; a dev link (make dev) reports the version
+              of galaxy.yml with C(-dev).
+        options:
+            collection_version_name:
+                type: str
+                required: true
+                description: Collection name without namespace.
+            collection_version_dir:
+                type: str
+                description: Root directory of the collection on the controller.
+            collection_version_textfile_dir:
+                type: str
+                description: Textfile collector directory of node_exporter.

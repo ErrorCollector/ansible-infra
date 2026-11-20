@@ -21,3 +21,12 @@
     roles:
         -   role: errorcollector.pangolin.pangolin_client
             tags: [pangolin, pangolin_client]
+
+# Last, only on a run of the whole domain: infra_collection_version for the drift alert
+-   name: Pangolin collection version
+    hosts: pangolin_server:newt:pangolin_client
+    become: true
+    roles:
+        -   role: errorcollector.base.collection_version
+            collection_version_name: pangolin
+            tags: [pangolin]
