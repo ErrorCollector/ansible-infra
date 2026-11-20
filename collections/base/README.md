@@ -51,6 +51,14 @@ endif
 # Project specific targets below, "## " adds them to make help
 ```
 
+`docker-compose.yaml`, so `docker compose run --rm ansible …` works as before (e.g. for `ansible-vault edit`):
+
+```yaml
+include:
+    -   path: collections/ansible_collections/errorcollector/base/extras/docker-compose.yaml
+        project_directory: .
+```
+
 Variables a project can override before the `include`: `INVENTORY`, `INIT_INVENTORY`, `INIT_PLAYBOOK`,
 `PLAYBOOK`, `VAULT_FILE`.
 
