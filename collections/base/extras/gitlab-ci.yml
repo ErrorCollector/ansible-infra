@@ -22,6 +22,21 @@
 #   INFRA_VAULT_PASS  vault password
 #   INFRA_KNOWN_HOSTS known_hosts of all hosts (host key checking is always on in CI)
 # Deploy is a manual job on the default branch and never touches the inventory group gitlab_server.
+#
+# Both jobs only appear when the push changes requirements.d/$DOMAIN.yml (the version of the domain) or a file
+# matching INFRA_CHANGES (default: inventory, group_vars, host_vars, templates, site.yml, ansible.cfg).
+# Override INFRA_CHANGES per job for jobs without a domain, e.g. one app role:
+#
+#   plan:monitor:
+#       extends: .infra:plan
+#       variables:
+#           HOSTS: monitor
+#           TAGS: monitor
+#           INFRA_CHANGES: "{roles/example.monitor/**/*,host_vars/monitor/**/*}"
+#
+# Pipelines started by hand (Build > Pipelines > Run pipeline), by the API or a schedule have every job.
+# Jobs that follow a deploy (e.g. a notification with needs: deploy:<domain>) extend .infra:after-deploy and set
+# the same DOMAIN/INFRA_CHANGES, so they exist exactly when the deploy job does.
 
 .infra:job:
     image: alpine/ansible:2.21.0
@@ -30,6 +45,8 @@
         # Runner build dirs are often world writable: Ansible ignores ./ansible.cfg there unless it is named explicitly
         ANSIBLE_CONFIG: "$CI_PROJECT_DIR/ansible.cfg"
         ANSIBLE_FORCE_COLOR: "true"
+        # rules:changes glob (File.fnmatch, {a,b} allowed) besides requirements.d/$DOMAIN.yml
+        INFRA_CHANGES: "{inventory.yml,ansible.cfg,site.yml,group_vars/**/*,host_vars/**/*,templates/**/*}"
     before_script:
         - apk add -q --no-cache bash make git
         - |
@@ -51,7 +68,11 @@
     extends: .infra:job
     stage: test
     rules:
+        # changes compares with the previous push of the branch; a new branch counts as changed everywhere
         -   if: $CI_COMMIT_REF_PROTECTED == "true"
+            changes: &infra_changes
+                - requirements.d/$DOMAIN.yml
+                - $INFRA_CHANGES
     script:
         - make ci-plan
 
@@ -60,9 +81,17 @@
     stage: deploy
     rules:
         -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+            changes: *infra_changes
             when: manual
     environment:
         name: production
     resource_group: infra-deploy
     script:
         - make ci-deploy
+
+.infra:after-deploy:
+    variables:
+        INFRA_CHANGES: "{inventory.yml,ansible.cfg,site.yml,group_vars/**/*,host_vars/**/*,templates/**/*}"
+    rules:
+        -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+            changes: *infra_changes
