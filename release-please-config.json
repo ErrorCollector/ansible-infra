@@ -1,0 +1,26 @@
+{
+    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+    "release-type": "simple",
+    "include-component-in-tag": true,
+    "tag-separator": "-",
+    "bump-minor-pre-major": true,
+    "separate-pull-requests": true,
+    "packages": {
+        "collections/base": {
+            "component": "base",
+            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+        },
+        "collections/pangolin": {
+            "component": "pangolin",
+            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+        },
+        "collections/gitlab": {
+            "component": "gitlab",
+            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+        },
+        "collections/web": {
+            "component": "web",
+            "extra-files": [{"type": "yaml", "path": "galaxy.yml", "jsonpath": "$.version"}]
+        }
+    }
+}

@@ -1,0 +1,45 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended",
+        ":semanticCommits",
+        ":semanticCommitTypeAll(fix)"
+    ],
+    "customManagers": [
+        {
+            "customType": "regex",
+            "description": "Versions annotated with '# renovate:' comments in role defaults/vars",
+            "managerFilePatterns": [
+                "/^collections/[^/]+/roles/[^/]+/(defaults|vars)/.+\\.ya?ml$/"
+            ],
+            "matchStrings": [
+                "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?( versioning=(?<versioning>\\S+))?\\n\\S+:\\s*\"?(?<currentValue>[^\"\\s]+)\"?"
+            ]
+        }
+    ],
+    "packageRules": [
+        {
+            "description": "Image/tool updates release the collection: fix = patch, major upstream updates = feat (minor while < 1.0)",
+            "matchUpdateTypes": ["major"],
+            "semanticCommitType": "feat"
+        },
+        {
+            "description": "CI and dev tooling do not change the collections, no release",
+            "matchManagers": ["github-actions", "pip_requirements"],
+            "semanticCommitType": "ci",
+            "semanticCommitScope": "deps"
+        },
+        {
+            "description": "Pangolin server, Gerbil and Badger have to match, one MR",
+            "matchPackageNames": ["docker.io/fosrl/pangolin", "docker.io/fosrl/gerbil", "fosrl/badger"],
+            "groupName": "pangolin server",
+            "semanticCommitScope": "pangolin"
+        },
+        {
+            "description": "Runner follows the GitLab version, one MR",
+            "matchPackageNames": ["gitlab/gitlab-ce", "gitlab/gitlab-runner"],
+            "groupName": "gitlab",
+            "semanticCommitScope": "gitlab"
+        }
+    ]
+}

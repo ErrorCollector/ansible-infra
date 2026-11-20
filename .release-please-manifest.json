@@ -1,0 +1,6 @@
+{
+    "collections/base": "0.1.0",
+    "collections/pangolin": "0.1.0",
+    "collections/gitlab": "0.1.0",
+    "collections/web": "0.1.0"
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+    <rect width="1280" height="640" fill="#111827"/>
+    <g transform="translate(120 200) scale(0.46875)"><rect width="512" height="512" rx="112" fill="#111827"/><g fill="none" stroke="#f8fafc" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"><path d="M178 116 C136 116 136 140 136 172 L136 218 C136 244 122 256 96 256 C122 256 136 268 136 294 L136 340 C136 372 136 396 178 396"/><path d="M334 116 C376 116 376 140 376 172 L376 218 C376 244 390 256 416 256 C390 256 376 268 376 294 L376 340 C376 372 376 396 334 396"/></g><rect x="231" y="146" width="50" height="146" rx="25" fill="#ff5a36"/><circle cx="256" cy="350" r="28" fill="#ff5a36"/></g>
+    <text x="420" y="300" font-family="Menlo, monospace" font-size="92" font-weight="700" fill="#f8fafc">ansible-infra</text>
+    <text x="424" y="364" font-family="Helvetica, Arial, sans-serif" font-size="36" fill="#9ca3af">Shared Ansible collections</text>
+    <text x="424" y="420" font-family="Menlo, monospace" font-size="28" fill="#ff5a36">base · pangolin · gitlab · web</text>
+</svg>

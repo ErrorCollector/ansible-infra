@@ -1,0 +1,12 @@
+# errorcollector.web
+
+Traefik reverse proxy and generic Docker Compose projects.
+
+Part of [ansible-infra](https://github.com/ErrorCollector/ansible-infra). Install a released version (tag `web-vX.Y.Z`):
+
+```yaml
+collections:
+    -   name: git+https://github.com/ErrorCollector/ansible-infra.git#/collections/web
+        type: git
+        version: web-v0.1.0
+```

@@ -1,0 +1,5 @@
+profile: production
+
+skip_list:
+    # versions stay below 1.0.0 while the roles are migrated from the project repos
+    - galaxy[version-incorrect]

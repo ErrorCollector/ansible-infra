@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 240" width="960" height="240" role="img" aria-label="ansible-infra">
+    <title>ansible-infra</title>
+    <g transform="translate(20 20) scale(0.390625)"><rect width="512" height="512" rx="112" fill="#111827"/><g fill="none" stroke="#f8fafc" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"><path d="M178 116 C136 116 136 140 136 172 L136 218 C136 244 122 256 96 256 C122 256 136 268 136 294 L136 340 C136 372 136 396 178 396"/><path d="M334 116 C376 116 376 140 376 172 L376 218 C376 244 390 256 416 256 C390 256 376 268 376 294 L376 340 C376 372 376 396 334 396"/></g><rect x="231" y="146" width="50" height="146" rx="25" fill="#ff5a36"/><circle cx="256" cy="350" r="28" fill="#ff5a36"/></g>
+    <text x="256" y="128" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="80" font-weight="700" fill="#111827">ansible-infra</text>
+    <text x="260" y="182" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" fill="#6b7280">Shared Ansible collections</text>
+</svg>
