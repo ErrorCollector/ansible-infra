@@ -19,6 +19,12 @@ INIT_PLAYBOOK  ?= playbooks/init.yml
 PLAYBOOK       ?= site.yml
 VAULT_FILE     ?= .ansible_vault_pass
 
+# In CI the paths only come from the project Makefile or these defaults, never from pipeline variables: with a comma
+# INVENTORY becomes a host list (secrets deployed to any host), PLAYBOOK and VAULT_FILE could point anywhere.
+ifdef GITLAB_CI
+$(foreach var,INVENTORY INIT_INVENTORY INIT_PLAYBOOK PLAYBOOK VAULT_FILE,$(if $(filter environment command,$(firstword $(origin $(var)))),$(error $(var) must not be set by the environment or the command line in CI)))
+endif
+
 # In GitLab CI the job image is the Ansible runner, locally it is the container from docker-compose.yaml.
 # Collections linked by `make dev` point outside the project and are mounted at the same path.
 ifdef GITLAB_CI
@@ -50,7 +56,8 @@ check-vault:
 
 # Targets with 2>/dev/null would otherwise stay silently empty when Docker is not running
 # HOSTS, TAGS & co. end up in the command line. In CI they can come from pipeline variables (Run pipeline), so only
-# plain host patterns, tags and paths are accepted; the shell reads the values from the environment, not Make.
+# plain host patterns and tags are accepted; the shell reads the values from the environment, not Make. The paths
+# (INVENTORY, PLAYBOOK, VAULT_FILE) cannot be set from outside in CI at all (see above).
 .PHONY: check-args
 check-args:
 	@for value in "$$HOSTS" "$$TAGS" "$$DOMAIN" "$$INVENTORY" "$$PLAYBOOK" "$$VAULT_FILE"; do \
