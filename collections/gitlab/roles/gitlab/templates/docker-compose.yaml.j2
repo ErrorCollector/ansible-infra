@@ -1,0 +1,70 @@
+services:
+    gitlab:
+        image: {{ gitlab_image }}:{{ gitlab_version }}
+        container_name: gitlab
+        restart: always
+        hostname: '{{ gitlab_hostname }}'
+{% if gitlab_registry_db_enabled %}
+        depends_on:
+            postgres_registry:
+                condition: service_healthy
+{% endif %}
+        environment:
+            # docker logs only shows warnings and errors, the full logs stay in {{ gitlab_home }}/logs.
+            # Replaces the image's "gitlab-ctl tail": skips access logs, production.log, gitlab-exporter
+            # and every INFO/DEBUG line. Only files that exist at container start are followed.
+            GITLAB_SKIP_TAIL_LOGS: "true"
+            GITLAB_POST_RECONFIGURE_SCRIPT: >-
+                find /var/log/gitlab -type f \( -name current -o -name '*.log' \)
+                ! -name '*access*' ! -name production.log ! -path '*/gitlab-exporter/*'
+                | xargs -r tail -F -q -n 0 2>/dev/null
+                | grep --line-buffered -v -i -E '"(severity|level)":"(debug|info)"|level=(debug|info)' &
+            GITLAB_OMNIBUS_CONFIG: |
+                external_url 'https://{{ gitlab_hostname }}'
+{{ gitlab_omnibus_config | regex_replace('\n+$', '') | regex_replace('^(?=.)', '                ', multiline=True) }}
+        ports:
+{% for port in gitlab_ports %}
+            - '{{ port }}'
+{% endfor %}
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "200m"
+                max-file: "5"
+        volumes:
+            - '{{ gitlab_home }}/config:/etc/gitlab'
+            - '{{ gitlab_home }}/logs:/var/log/gitlab'
+            - '{{ gitlab_home }}/data:/var/opt/gitlab'
+            - '{{ gitlab_home }}/registry:/var/opt/registry'
+        shm_size: '256m'
+{% if gitlab_registry_db_enabled %}
+
+    postgres_registry:
+        container_name: gitlab_postgres_registry
+        image: {{ gitlab_registry_db_image }}
+        restart: always
+        healthcheck:
+            test: [ "CMD", "pg_isready", "-d", "{{ gitlab_registry_db_user }}", "-U", "{{ gitlab_registry_db_user }}" ]
+            timeout: 5s
+            retries: 5
+            start_period: 60s
+        ulimits:
+            nofile:
+                soft: 65535
+                hard: 65535
+        volumes:
+            - '{{ gitlab_home }}/postgres_registry:/var/lib/postgresql/data'
+        env_file:
+            - .env
+{% endif %}
+{% if gitlab_backup_image | length > 0 %}
+
+    gitlab_backup:
+        image: {{ gitlab_backup_image }}
+        container_name: gitlab_pg_backup
+        depends_on:
+            postgres_registry:
+                condition: service_healthy
+        env_file:
+            - .env
+{% endif %}

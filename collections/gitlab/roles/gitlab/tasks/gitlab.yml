@@ -1,0 +1,47 @@
+-   name: Ensure project directory exists
+    ansible.builtin.file:
+        path: "{{ gitlab_dir }}"
+        state: directory
+        mode: "0755"
+    register: gitlab_dir_result
+
+# Modes as GitLab sets them itself, so the runs do not fight with the container
+-   name: Ensure gitlab data directories exist
+    ansible.builtin.file:
+        path: "{{ gitlab_home }}/{{ item.path }}"
+        state: directory
+        mode: "{{ item.mode }}"
+    loop:
+        - { path: config, mode: "0775" }
+        - { path: logs, mode: "0755" }
+        - { path: data, mode: "0755" }
+        - { path: registry, mode: "0770" }
+        - { path: postgres_registry, mode: "0755" }
+    loop_control:
+        label: "{{ gitlab_home }}/{{ item.path }}"
+
+# Secrets of the registry database and the backup sidecar, template from the project (gitlab_env_template).
+# diff: false keeps them out of make plan.
+-   name: Deploy .env
+    ansible.builtin.template:
+        src: "{{ gitlab_env_template }}"
+        dest: "{{ gitlab_dir }}/.env"
+        mode: "0600"
+    diff: false
+    when: gitlab_env_template | length > 0
+
+# The omnibus config contains secrets, the diff of the compose file stays out of make plan as well
+-   name: Deploy docker-compose.yaml
+    ansible.builtin.template:
+        src: docker-compose.yaml.j2
+        dest: "{{ gitlab_dir }}/docker-compose.yaml"
+        mode: "0600"
+    diff: false
+
+# Recreates only the services whose definition changed; a new GITLAB_OMNIBUS_CONFIG or version recreates
+# GitLab (several minutes downtime, upgrade migrations)
+-   name: Start or update gitlab
+    community.docker.docker_compose_v2:
+        project_src: "{{ gitlab_dir }}"
+        pull: missing
+    when: not (ansible_check_mode and gitlab_dir_result is changed)

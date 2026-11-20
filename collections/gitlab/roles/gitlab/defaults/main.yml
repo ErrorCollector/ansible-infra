@@ -1,0 +1,28 @@
+# The runner version (errorcollector.gitlab.gitlab_runner) follows major.minor, Renovate group "gitlab" updates both
+# renovate: datasource=docker depName=gitlab/gitlab-ce
+gitlab_version: 19.6.1-ce.0
+gitlab_image: gitlab/gitlab-ce
+
+# gitlab_hostname (e.g. gitlab.example.org), gitlab_dir, gitlab_home and gitlab_omnibus_config are required (project vars)
+# Published ports; add the registry port of registry_external_url in the project
+gitlab_ports:
+    - "80:80"
+    - "443:443"
+    - "22:22"
+
+# Registry metadata database (postgres_registry), credentials in the .env of gitlab_env_template
+gitlab_registry_db_enabled: true
+gitlab_registry_db_image: postgres:16-alpine
+gitlab_registry_db_user: "{{ postgres_user | default('registry') }}"
+
+# .env of the compose project (secrets of the registry database and the backup sidecar), a template of the project:
+#   gitlab_env_template: "{{ inventory_dir }}/templates/gitlab.env.j2"   (playbook_dir is the collection here)
+gitlab_env_template: ""
+
+# Sidecar that backs up postgres_registry, empty = none
+gitlab_backup_image: ""
+
+# Cron backups to S3
+gitlab_backup_logfile: /var/log/gitlab-backup.log
+gitlab_backup_aws_access_key_id: "{{ gitlab_rails_backup_upload_connection_aws_access_key_id | default('') }}"
+gitlab_backup_aws_secret_access_key: "{{ gitlab_rails_backup_upload_connection_aws_secret_access_key | default('') }}"
