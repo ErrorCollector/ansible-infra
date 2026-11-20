@@ -125,6 +125,30 @@ shell: check-vault ## Shell environment only (no container restarts): [HOSTS=h1,
 	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) --tags shell $(PLAYBOOK)
 
 # --------------------------------------------------
+# GitLab CI (extras/gitlab-ci.yml)
+# The GitLab server is never deployed from CI: the inventory group gitlab_server is always excluded.
+# --------------------------------------------------
+
+CI_LIMIT = --limit '$(if $(filter-out all,$(HOSTS)),$(HOSTS),all),!gitlab_server'
+
+.PHONY: ci-plan
+# Without --diff: job logs are readable for every developer of the project, and not every template keeps its
+# secrets out of the diff. The full diff: make plan (locally).
+ci-plan: check-vault check-collections ## CI: dry run (changed tasks per host, no diff), then the hosts with changes: [DOMAIN=…] [HOSTS=…]
+	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) $(TAGS_ARG) --check $(PLAYBOOK) | tee ci-plan.log
+	@echo ""
+	@sed 's/\x1b\[[0-9;]*m//g' ci-plan.log | awk '/^PLAY RECAP/ { recap = 1; next } \
+		recap && /changed=[1-9]|failed=[1-9]|unreachable=[1-9]/ { found = 1; print "  " $$0 } \
+		END { if (!found) print "  no changes" }' | (echo "Hosts with changes:"; cat)
+
+.PHONY: ci-deploy
+ci-deploy: check-vault check-collections ## CI: roll out, never the GitLab server: [DOMAIN=…] [HOSTS=…|all]
+ifndef GITLAB_CI
+	$(error ci-deploy only runs in GitLab CI, locally: make deploy)
+endif
+	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(CI_LIMIT) $(TAGS_ARG) $(PLAYBOOK)
+
+# --------------------------------------------------
 # Hosts
 # --------------------------------------------------
 
