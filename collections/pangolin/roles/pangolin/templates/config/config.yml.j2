@@ -1,0 +1,36 @@
+# To see all available options, please visit the docs:
+# https://docs.pangolin.net/
+
+gerbil:
+    start_port: 51820
+    base_endpoint: "{{ pangolin_domain }}"
+
+app:
+    dashboard_url: "https://{{ pangolin_domain }}"
+    log_level: "{{ pangolin_log_level }}"
+    telemetry:
+        anonymous_usage: {{ pangolin_telemetry | lower }}
+
+domains:
+    domain1:
+        base_domain: "{{ pangolin_base_domain }}"
+
+server:
+    secret: "{{ pangolin_server_secret }}"
+    cors:
+        origins: ["https://{{ pangolin_domain }}"]
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        allowed_headers: ["X-CSRF-Token", "Content-Type"]
+        credentials: false
+{% if pangolin_maxmind_db_path | length > 0 %}
+    maxmind_db_path: "{{ pangolin_maxmind_db_path }}"
+{% endif %}
+
+flags:
+{% for flag, value in pangolin_flags.items() %}
+    {{ flag }}: {{ value | to_json }}
+{% endfor %}
+{% if pangolin_config_extra | length > 0 %}
+
+{{ pangolin_config_extra | to_nice_yaml(indent=4) }}
+{%- endif %}

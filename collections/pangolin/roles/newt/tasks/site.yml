@@ -1,0 +1,64 @@
+-   name: Check site {{ newt_site.name }}
+    ansible.builtin.assert:
+        that:
+            - newt_site.endpoint | default('') | length > 0
+            - newt_site.secret | default('') | length > 0
+        fail_msg: "Newt site {{ newt_site.name }}: endpoint and secret (host vault) are required when id is set"
+        quiet: true
+
+-   name: Ensure directory exists ({{ newt_site.name }})
+    ansible.builtin.file:
+        path: "{{ newt_site.dir }}"
+        state: directory
+        mode: "0755"
+    register: newt_dir
+
+-   name: Deploy docker-compose.yaml ({{ newt_site.name }})
+    ansible.builtin.template:
+        src: docker-compose.yaml.j2
+        dest: "{{ newt_site.dir }}/docker-compose.yaml"
+        mode: "0644"
+
+# diff: false keeps the secret out of `make plan` and CI logs
+-   name: Deploy .env ({{ newt_site.name }})
+    ansible.builtin.template:
+        src: env.j2
+        dest: "{{ newt_site.dir }}/.env"
+        mode: "0600"
+    diff: false
+
+-   name: Check network {{ newt_network }}
+    ansible.builtin.command: docker network inspect {{ newt_network }}
+    register: newt_network_inspect
+    failed_when: false
+    changed_when: false
+    check_mode: false
+    when: newt_network | length > 0
+
+-   name: Create network {{ newt_network }}
+    ansible.builtin.command: docker network create {{ newt_network }}
+    changed_when: true
+    when:
+        - newt_network | length > 0
+        - newt_network_inspect.rc != 0
+
+# Recreates the container only when the compose file or .env changed.
+# A new site in check mode has no directory yet, so there is nothing to compare.
+-   name: Start Newt ({{ newt_site.name }})
+    community.docker.docker_compose_v2:
+        project_src: "{{ newt_site.dir }}"
+        state: present
+        pull: missing
+    when: not (ansible_check_mode and newt_dir is changed)
+
+# Newt does not rebuild its tunnel after Pangolin/Gerbil restarted
+-   name: Restart Newt after Pangolin changed ({{ newt_site.name }})
+    community.docker.docker_compose_v2:
+        project_src: "{{ newt_site.dir }}"
+        state: restarted
+    when:
+        - newt_restart_with | length > 0
+        - >-
+            groups[newt_restart_with] | default([])
+            | map('extract', hostvars) | selectattr('pangolin_changed', 'defined')
+            | selectattr('pangolin_changed') | list | length > 0

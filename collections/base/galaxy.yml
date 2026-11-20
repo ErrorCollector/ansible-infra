@@ -1,20 +1,19 @@
 namespace: errorcollector
 name: base
-version: 0.2.0
+# managed by release-please
+version: 0.1.0
 readme: README.md
 authors:
-  - Eric Hertwig <eric@ehdev.de>
-description: >-
-  Base for every host: provisioning user, packages, Docker, shell, OS updates,
-  node_exporter, shared tooling
+    - Eric Hertwig <eric@ehdev.de>
+description: "Base for every host: provisioning user, packages, Docker, shell, OS updates, node_exporter, shared tooling"
 license:
-  - MIT
+    - MIT
 tags:
-  - infrastructure
-  - docker
+    - infrastructure
+    - docker
 repository: https://github.com/ErrorCollector/ansible-infra
 issues: https://github.com/ErrorCollector/ansible-infra/issues
 dependencies:
-  community.docker: '>=4.0.0'
+    community.docker: ">=4.0.0"
 build_ignore:
-  - '*.tar.gz'
+    - "*.tar.gz"

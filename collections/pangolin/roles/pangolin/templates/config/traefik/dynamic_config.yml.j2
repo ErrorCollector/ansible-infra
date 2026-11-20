@@ -1,0 +1,113 @@
+http:
+  middlewares:
+    badger:
+      plugin:
+        badger:
+          disableForwardAuth: true
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+
+  routers:
+    # HTTP to HTTPS redirect router
+    main-app-router-redirect:
+      rule: "Host(`{{ pangolin_domain }}`)"
+      service: next-service
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+        - badger
+
+    # Next.js router (handles everything except API and WebSocket paths)
+    next-router:
+      rule: "Host(`{{ pangolin_domain }}`) && !PathPrefix(`/api/v1`)"
+      service: next-service
+      entryPoints:
+        - websecure
+      middlewares:
+        - badger
+      tls:
+        certResolver: letsencrypt
+
+    # API router (handles /api/v1 paths)
+    api-router:
+      rule: "Host(`{{ pangolin_domain }}`) && PathPrefix(`/api/v1`)"
+      service: api-service
+      entryPoints:
+        - websecure
+      middlewares:
+        - badger
+      tls:
+        certResolver: letsencrypt
+
+    # WebSocket router
+    ws-router:
+      rule: "Host(`{{ pangolin_domain }}`)"
+      service: api-service
+      entryPoints:
+        - websecure
+      middlewares:
+        - badger
+      tls:
+        certResolver: letsencrypt
+{% for r in pangolin_extra_routers %}
+
+    # {{ r.name }} (pangolin_extra_routers)
+    {{ r.name }}-router-redirect:
+      rule: "Host(`{{ r.host }}`)"
+      service: {{ r.name }}-service
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+
+    {{ r.name }}-router:
+      rule: "Host(`{{ r.host }}`)"
+      service: {{ r.name }}-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+{% endfor %}
+
+  services:
+    next-service:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3002"  # Next.js server
+
+    api-service:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3000"  # API/WebSocket server
+{% for r in pangolin_extra_routers %}
+
+    {{ r.name }}-service:
+      loadBalancer:
+        servers:
+          - url: "{{ r.url }}"
+{% endfor %}
+
+# Applies to every router without its own TLS option (including the ones Pangolin provides via HTTP):
+# TLS 1.2+ only, with TLS 1.2 only ECDHE with AEAD (GCM, ChaCha20), no CBC suites. Go decides the TLS 1.3 suites.
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+
+tcp:
+  serversTransports:
+    pp-transport-v1:
+      proxyProtocol:
+        version: 1
+    pp-transport-v2:
+      proxyProtocol:
+        version: 2

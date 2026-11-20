@@ -1,0 +1,66 @@
+-   name: Ensure backup directory exists
+    ansible.builtin.file:
+        path: "{{ pangolin_backup_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+-   name: Get running pangolin image
+    ansible.builtin.command: docker inspect --format "{{ '{{' }}.Config.Image{{ '}}' }}" pangolin
+    register: pangolin_running_image
+    failed_when: false
+    changed_when: false
+    check_mode: false
+
+-   name: Set backup file name
+    ansible.builtin.set_fact:
+        pangolin_backup_file: >-
+            {{ pangolin_backup_dir }}/pangolin-{{
+            (pangolin_running_image.stdout | regex_search('[^:]+$')) if pangolin_running_image.rc == 0 else 'unknown'
+            }}-{{ now(fmt='%Y%m%d-%H%M%S') }}.tgz
+
+# Stops pangolin so the SQLite DB is consistent; the deploy afterwards starts it again
+-   name: Stop pangolin
+    ansible.builtin.command: docker compose stop pangolin
+    args:
+        chdir: "{{ pangolin_dir }}"
+    changed_when: true
+    when: pangolin_running_image.rc == 0
+
+# tar creates the archive here (the rule assumes unarchive); community.general.archive is not a dependency
+-   name: Create backup  # noqa: command-instead-of-module
+    ansible.builtin.command: >
+        tar czf {{ pangolin_backup_file }}
+        --exclude=config/logs --exclude=config/traefik/logs
+        docker-compose.yml config
+    args:
+        chdir: "{{ pangolin_dir }}"
+        creates: "{{ pangolin_backup_file }}"
+
+-   name: Restrict backup permissions
+    ansible.builtin.file:
+        path: "{{ pangolin_backup_file }}"
+        mode: "0600"
+    when: not ansible_check_mode
+
+-   name: Start pangolin
+    ansible.builtin.command: docker compose start pangolin
+    args:
+        chdir: "{{ pangolin_dir }}"
+    changed_when: true
+    when: pangolin_running_image.rc == 0
+
+-   name: Find old backups
+    ansible.builtin.find:
+        paths: "{{ pangolin_backup_dir }}"
+        patterns: "pangolin-*.tgz"
+    register: pangolin_backups
+
+-   name: Remove old backups
+    ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+    loop: "{{ (pangolin_backups.files | sort(attribute='mtime', reverse=true))[pangolin_backup_keep:] }}"
+    loop_control:
+        label: "{{ item.path }}"

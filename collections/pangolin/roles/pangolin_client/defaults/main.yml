@@ -1,0 +1,9 @@
+# renovate: datasource=docker depName=docker.io/fosrl/pangolin-cli
+pangolin_client_version: "0.23.0"
+pangolin_client_image: fosrl/pangolin-cli
+
+pangolin_client_dir: /opt/pangolin-client
+# Defaults keep the variables the projects already use
+pangolin_client_endpoint: "{{ pangolin_newt_endpoint | default('') }}"
+pangolin_client_id: "{{ pangolin_machine_id | default('') }}"
+pangolin_client_secret: "{{ pangolin_machine_secret | default('') }}"
