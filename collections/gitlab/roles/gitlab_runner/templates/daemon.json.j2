@@ -1,0 +1,8 @@
+{
+  "data-root": "{{ gitlab_runner_docker_data_root }}",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "{{ gitlab_runner_docker_log_max_size }}",
+    "max-file": "{{ gitlab_runner_docker_log_max_file }}"
+  }
+}

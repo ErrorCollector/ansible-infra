@@ -1,0 +1,36 @@
+# ECR pull credentials for job images (image: <account>.dkr.ecr.<region>.amazonaws.com/...). The runner process
+# resolves registry credentials itself (not the host daemon), so helper binary, docker config.json and AWS keys
+# are mounted into the runner container (docker-compose.yaml). The helper fetches the 12h ECR token itself.
+-   name: Ensure ECR directories exist
+    ansible.builtin.file:
+        path: "{{ gitlab_runner_dir }}/{{ item }}"
+        state: directory
+        mode: "0700"
+    loop:
+        - bin
+        - aws
+        - docker
+
+-   name: Download amazon-ecr-credential-helper
+    ansible.builtin.get_url:
+        url: >-
+            https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/{{ gitlab_runner_ecr_helper_version }}/linux-{{
+            gitlab_runner_ecr_helper_arch[ansible_architecture] }}/docker-credential-ecr-login
+        dest: "{{ gitlab_runner_dir }}/bin/docker-credential-ecr-login"
+        checksum: "{{ gitlab_runner_ecr_helper_checksums[ansible_architecture] | default(omit) }}"
+        mode: "0755"
+        # the version is part of the URL, download only when it changes
+        force: false
+
+-   name: Deploy AWS credentials for the ECR helper
+    ansible.builtin.template:
+        src: aws-credentials.j2
+        dest: "{{ gitlab_runner_dir }}/aws/credentials"
+        mode: "0600"
+    diff: false
+
+-   name: Deploy docker config.json with the ECR credential helper
+    ansible.builtin.template:
+        src: docker-config.json.j2
+        dest: "{{ gitlab_runner_dir }}/docker/config.json"
+        mode: "0600"

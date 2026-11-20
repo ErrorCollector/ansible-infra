@@ -1,0 +1,9 @@
+# Domain playbook, imported by the project site.yml: import_playbook: errorcollector.gitlab.site
+# GitLab runners on the inventory group gitlab_runners. The GitLab server is not part of it: it is deployed
+# locally only (import_playbook: errorcollector.gitlab.server, never from CI).
+-   name: GitLab runners
+    hosts: gitlab_runners
+    become: true
+    roles:
+        -   role: errorcollector.gitlab.gitlab_runner
+            tags: [gitlab, gitlab_runner]

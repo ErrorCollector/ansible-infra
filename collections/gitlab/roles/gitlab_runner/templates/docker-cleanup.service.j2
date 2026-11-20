@@ -1,0 +1,14 @@
+[Unit]
+Description=Docker & GitLab Runner Cleanup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/docker-cleanup.sh
+# The default of 90s would stop a large prune in the middle of the cleanup
+TimeoutStartSec=1800
+Nice=10
+IOSchedulingClass=idle
+StandardOutput=journal
+StandardError=journal

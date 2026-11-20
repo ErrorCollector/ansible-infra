@@ -1,0 +1,30 @@
+-   name: Ensure cache directory exists
+    ansible.builtin.file:
+        path: "{{ gitlab_runner_cache_dir }}"
+        state: directory
+        mode: "0755"
+
+-   name: Deploy cleanup script
+    ansible.builtin.template:
+        src: docker-cleanup.sh.j2
+        dest: /usr/local/bin/docker-cleanup.sh
+        mode: "0755"
+
+-   name: Deploy cleanup systemd units
+    ansible.builtin.template:
+        src: "docker-cleanup.{{ item }}.j2"
+        dest: "/etc/systemd/system/docker-cleanup.{{ item }}"
+        mode: "0644"
+    loop:
+        - service
+        - timer
+    notify: Restart cleanup timer
+
+-   name: Enable cleanup timer
+    ansible.builtin.systemd_service:
+        name: docker-cleanup.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+    # the unit files do not exist yet in --check mode
+    ignore_errors: "{{ ansible_check_mode }}"

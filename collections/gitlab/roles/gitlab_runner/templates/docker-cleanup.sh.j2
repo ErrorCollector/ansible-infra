@@ -1,0 +1,151 @@
+#!/bin/bash
+# Managed by Ansible (errorcollector.gitlab.gitlab_runner)
+# Docker and cache cleanup for GitLab runners
+
+# No "set -e": a failing prune step (e.g. because a job runs in parallel) must not
+# skip all following steps. Failures are logged instead.
+set -uo pipefail
+
+CACHE_DIR="{{ gitlab_runner_cache_dir }}"
+CACHE_MAX_AGE_DAYS={{ gitlab_runner_cleanup_cache_max_age_days }}
+CACHE_MAX_SIZE_MB={{ gitlab_runner_cleanup_cache_max_size_mb }}
+IMAGE_MAX_AGE="{{ gitlab_runner_cleanup_image_max_age }}"
+BUILDER_MAX_AGE="{{ gitlab_runner_cleanup_builder_max_age }}"
+DISK_WARN={{ gitlab_runner_cleanup_disk_warn_percent }}
+DISK_CRITICAL={{ gitlab_runner_cleanup_disk_critical_percent }}
+VOLUME_MAX_AGE_DAYS={{ gitlab_runner_cleanup_volume_max_age_days }}
+RUNNER_VOLUME_FILTER="label=com.gitlab.gitlab-runner.managed=true"
+
+log() { echo "[$(date '+%F %T')] $*"; }
+
+run() {
+    log "-> $*"
+    if ! "$@"; then
+        log "!! failed (ignored): $*"
+    fi
+}
+
+# Usage of the file system Docker stores its data on (data-root may be a separate volume)
+DOCKER_ROOT=$(docker info --format '{% raw %}{{.DockerRootDir}}{% endraw %}' 2>/dev/null || echo /)
+disk_used_percent() {
+    df --output=pcent "$DOCKER_ROOT" | tail -n1 | tr -dc '0-9'
+}
+
+# Runner volumes ("<last use as epoch> <name>"), least recently used first. Docker does not
+# record a last use, so .git/FETCH_HEAD serves as marker: the runner runs "git fetch" in every
+# job (also with GIT_STRATEGY=clone). Without a checkout the creation time of the volume counts.
+runner_volumes_lru() {
+    local volume mountpoint last
+    docker volume ls -q --filter "$RUNNER_VOLUME_FILTER" | while IFS= read -r volume; do
+        mountpoint=$(docker volume inspect --format '{% raw %}{{.Mountpoint}}{% endraw %}' "$volume" 2>/dev/null) || continue
+        last=$(find "$mountpoint" -maxdepth 8 \( -name node_modules -o -name vendor -o -name objects \) -prune \
+                -o -path '*/.git/FETCH_HEAD' -printf '%T@\n' 2>/dev/null | sort -n | tail -n1)
+        [[ -z "$last" ]] && last=$(stat -c '%Y' "$mountpoint" 2>/dev/null)
+        echo "${last%.*} $volume"
+    done | sort -n
+}
+
+# Docker refuses to remove a volume a running job uses - intended, only logged.
+remove_volume() {
+    if docker volume rm "$1" >/dev/null 2>&1; then
+        log "   removed: $1"
+    else
+        log "   in use, skipped: $1"
+    fi
+}
+
+log "=== Docker cleanup start ==="
+log "Disk usage of $DOCKER_ROOT before cleanup: $(disk_used_percent)%"
+df -h "$DOCKER_ROOT"
+docker system df || true
+
+# --- Basic cleanup, always ------------------------------------------------------
+run docker container prune -f
+run docker image prune -f
+# Without --all, "volume prune" removes only anonymous volumes since Docker 23,
+# e.g. /var/lib/docker of docker:dind services.
+run docker volume prune -f
+run docker network prune -f
+run docker builder prune -f --filter "until=${BUILDER_MAX_AGE}"
+
+# --- Runner volumes (/builds per project and concurrency slot) ---------------------
+# The runner-*-cache-* volumes are *named*, "volume prune" does not touch them and they
+# grow forever (gitlab-runner#1611). They hold the git checkout so that later jobs only
+# fetch instead of cloning, so only remove what has not been used for a while; on low
+# disk space an LRU cleanup follows further down. 0 days = keep them all.
+if (( VOLUME_MAX_AGE_DAYS > 0 )); then
+    log "--- Runner volumes unused for more than ${VOLUME_MAX_AGE_DAYS} days ---"
+    volume_cutoff=$(( $(date +%s) - VOLUME_MAX_AGE_DAYS * 86400 ))
+    while read -r last volume; do
+        (( last < volume_cutoff )) || break
+        remove_volume "$volume"
+    done < <(runner_volumes_lru)
+fi
+
+# --- Local runner cache -------------------------------------------------------------
+# The cache type "local" has no expiry (unlike S3 with a lifecycle rule), with S3 only local
+# leftovers stay here. Without this cleanup CACHE_DIR grows forever.
+if [[ -d "$CACHE_DIR" ]]; then
+    log "--- Runner cache: $CACHE_DIR ---"
+    log "Size before: $(du -sh "$CACHE_DIR" 2>/dev/null | cut -f1)"
+
+    find "$CACHE_DIR" -type f -mtime "+${CACHE_MAX_AGE_DAYS}" -print -delete 2>/dev/null \
+        | sed 's/^/   removed (age): /'
+
+    # Hard size limit: oldest files first
+    limit_kb=$(( CACHE_MAX_SIZE_MB * 1024 ))
+    total_kb=$(du -sk "$CACHE_DIR" 2>/dev/null | cut -f1)
+    total_kb=${total_kb:-0}
+
+    if (( total_kb > limit_kb )); then
+        log "Cache above limit (${total_kb} KB > ${limit_kb} KB), removing the oldest entries"
+        while IFS= read -r -d '' entry; do
+            (( total_kb <= limit_kb )) && break
+            file="${entry#* }"
+            size_kb=$(du -k "$file" 2>/dev/null | cut -f1)
+            if rm -f -- "$file" 2>/dev/null; then
+                total_kb=$(( total_kb - ${size_kb:-0} ))
+                log "   removed (limit): $file"
+            fi
+        done < <(find "$CACHE_DIR" -type f -printf '%T@ %p\0' 2>/dev/null | sort -zn)
+    fi
+
+    find "$CACHE_DIR" -mindepth 1 -type d -empty -delete 2>/dev/null
+    log "Size after: $(du -sh "$CACHE_DIR" 2>/dev/null | cut -f1)"
+else
+    log "Cache directory $CACHE_DIR missing - skipped"
+fi
+
+# --- Escalation depending on disk usage ----------------------------------------------
+# "docker image prune -f" only removes dangling images. Tagged CI images (node:*, php:*,
+# own tags) pile up otherwise. Running containers protect their images, the runner stays.
+disk_now=$(disk_used_percent)
+if (( disk_now >= DISK_CRITICAL )); then
+    log "Disk at ${disk_now}% (>= ${DISK_CRITICAL}%): aggressive cleanup"
+    run docker image prune -af
+    run docker builder prune -af
+    # Unused named volumes without the runner label, e.g. from "docker compose up" in jobs
+    # through the mounted host socket. Runner hosts are dedicated, the runner itself uses
+    # bind mounts only. Runner volumes follow by LRU.
+    run docker volume prune -af --filter "label!=com.gitlab.gitlab-runner.managed=true"
+elif (( disk_now >= DISK_WARN )); then
+    log "Disk at ${disk_now}% (>= ${DISK_WARN}%): removing unused images older than ${IMAGE_MAX_AGE}"
+    run docker image prune -af --filter "until=${IMAGE_MAX_AGE}"
+else
+    log "Disk at ${disk_now}% (< ${DISK_WARN}%): no additional image cleanup needed"
+fi
+
+# If that is not enough, remove runner volumes by LRU until the disk is below DISK_WARN
+# again - actively used projects keep their checkout.
+if (( $(disk_used_percent) >= DISK_WARN )); then
+    log "Disk still >= ${DISK_WARN}%: removing runner volumes by LRU"
+    while read -r last volume; do
+        (( $(disk_used_percent) < DISK_WARN )) && break
+        remove_volume "$volume"
+    done < <(runner_volumes_lru)
+fi
+
+log "--- Disk after cleanup ---"
+df -h "$DOCKER_ROOT"
+docker system df || true
+log "=== Docker cleanup end: $(disk_used_percent)% used ==="

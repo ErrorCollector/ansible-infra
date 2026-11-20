@@ -1,0 +1,25 @@
+services:
+    gitlab-runner:
+        image: {{ gitlab_runner_image }}:{{ gitlab_runner_version }}
+        container_name: gitlab-runner
+        restart: always
+        volumes:
+            - ./config:/etc/gitlab-runner
+            - /var/run/docker.sock:/var/run/docker.sock
+            - "{{ gitlab_runner_cache_dir }}:/cache"
+{% if gitlab_runner_ecr_enabled %}
+            # ECR pull for job images: the runner calls the helper itself (tasks/ecr.yml)
+            - ./bin/docker-credential-ecr-login:/usr/local/bin/docker-credential-ecr-login:ro
+            - ./docker/config.json:/root/.docker/config.json:ro
+            - ./aws/credentials:/root/.aws/credentials:ro
+{% endif %}
+        environment:
+            - "TZ={{ gitlab_runner_timezone }}"
+        network_mode: host
+        # The runner runs permanently, without a limit its json log
+        # below /var/lib/docker/containers grows forever.
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"

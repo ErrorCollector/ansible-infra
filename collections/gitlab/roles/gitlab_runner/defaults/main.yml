@@ -1,0 +1,51 @@
+# The runner version follows the GitLab version (major.minor); Renovate group "gitlab" updates both
+# renovate: datasource=docker depName=gitlab/gitlab-runner versioning=regex:^alpine-v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$
+gitlab_runner_version: alpine-v19.6.0
+gitlab_runner_image: gitlab/gitlab-runner
+
+# gitlab_runner_url, gitlab_runner_id, gitlab_runner_token (vault) are required (project vars)
+gitlab_runner_name: "{{ inventory_hostname }}"
+gitlab_runner_dir: /opt/gitlab-runner
+gitlab_runner_cache_dir: /srv/gitlab-runner/cache
+gitlab_runner_timezone: Europe/Berlin
+gitlab_runner_concurrent: 4
+gitlab_runner_request_concurrency: 3
+
+# Cache: local (gitlab_runner_cache_dir) or s3 (bucket, region and keys below)
+gitlab_runner_cache_type: local
+gitlab_runner_cache_s3_server: s3.amazonaws.com
+gitlab_runner_cache_s3_bucket: ""
+gitlab_runner_aws_region: ""
+gitlab_runner_aws_access_key_id: ""
+gitlab_runner_aws_secret_access_key: ""
+
+# Job images from AWS ECR (amazon-ecr-credential-helper in the runner container, uses the keys above)
+gitlab_runner_ecr_enabled: false
+gitlab_runner_ecr_registry: ""
+gitlab_runner_ecr_helper_version: "0.10.1"
+gitlab_runner_ecr_helper_arch:
+    x86_64: amd64
+    aarch64: arm64
+# SHA256 of the helper (the .sha256 files of the release); a version update needs the new values
+gitlab_runner_ecr_helper_checksums:
+    x86_64: sha256:ae5f2c0f1a2283f687e24a529f41d58f29c0a5bcfa0b60d1d3f8dc33b7eac4f2
+    aarch64: sha256:d321a6c4044fda6a4c6c6054d8e5b56ae9c902b6e37f5cc3b0d89df9298b07ef
+
+# Docker data on a separate volume: data-root and containerd root, daemon.json from this role
+# (set common_docker_daemon_json: false for these hosts). Empty = Docker default.
+gitlab_runner_docker_data_root: ""
+gitlab_runner_containerd_root: ""
+gitlab_runner_docker_log_max_size: 100m
+gitlab_runner_docker_log_max_file: "3"
+
+# Cleanup (docker-cleanup.timer)
+gitlab_runner_cleanup_oncalendar: "*-*-* 00/6:00:00"
+gitlab_runner_cleanup_randomized_delay: 300
+gitlab_runner_cleanup_cache_max_age_days: 7
+gitlab_runner_cleanup_cache_max_size_mb: 20480
+# Runner volumes (/builds checkouts) no job used for this many days; 0 = keep them
+gitlab_runner_cleanup_volume_max_age_days: 7
+gitlab_runner_cleanup_image_max_age: 168h
+gitlab_runner_cleanup_builder_max_age: 48h
+gitlab_runner_cleanup_disk_warn_percent: 70
+gitlab_runner_cleanup_disk_critical_percent: 85

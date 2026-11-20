@@ -1,0 +1,30 @@
+-   name: Ensure runner directories exist
+    ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+    loop:
+        - "{{ gitlab_runner_dir }}"
+        - "{{ gitlab_runner_dir }}/config"
+    register: gitlab_runner_dirs
+
+-   name: Deploy docker-compose.yaml
+    ansible.builtin.template:
+        src: docker-compose.yaml.j2
+        dest: "{{ gitlab_runner_dir }}/docker-compose.yaml"
+        mode: "0644"
+
+# The runner reloads config.toml by itself, no restart. diff: false keeps the tokens out of plan and CI logs.
+-   name: Deploy runner config.toml
+    ansible.builtin.template:
+        src: config.toml.j2
+        dest: "{{ gitlab_runner_dir }}/config/config.toml"
+        mode: "0600"
+    diff: false
+
+# Recreates the runner only when the compose file changes (e.g. a new version); running jobs are aborted then
+-   name: Start GitLab Runner
+    community.docker.docker_compose_v2:
+        project_src: "{{ gitlab_runner_dir }}"
+        pull: missing
+    when: not (ansible_check_mode and gitlab_runner_dirs is changed)

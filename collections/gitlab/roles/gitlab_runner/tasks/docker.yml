@@ -1,0 +1,40 @@
+# Docker is only restarted when daemon.json or the containerd config changes (handler). That restart
+# stops the runner and its jobs, so roll out a runner from another runner or locally.
+-   name: Ensure Docker and containerd directories exist
+    ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0711"
+    loop:
+        - "{{ gitlab_runner_docker_data_root }}"
+        - "{{ gitlab_runner_containerd_root }}"
+
+# Log options as in errorcollector.base.common (common_docker_daemon_json: false on the runners)
+-   name: Configure Docker data-root and log rotation
+    ansible.builtin.template:
+        src: daemon.json.j2
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: "0644"
+    notify: Restart containerd and docker
+
+-   name: Configure containerd root
+    ansible.builtin.template:
+        src: containerd-config.toml.j2
+        dest: /etc/containerd/config.toml
+        owner: root
+        group: root
+        mode: "0644"
+    notify: Restart containerd and docker
+
+-   name: Ensure containerd and docker run
+    ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+    loop:
+        - containerd
+        - docker

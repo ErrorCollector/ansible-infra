@@ -1,0 +1,10 @@
+[Unit]
+Description=Docker Cleanup ({{ gitlab_runner_cleanup_oncalendar }})
+
+[Timer]
+OnCalendar={{ gitlab_runner_cleanup_oncalendar }}
+Persistent=true
+RandomizedDelaySec={{ gitlab_runner_cleanup_randomized_delay }}
+
+[Install]
+WantedBy=timers.target
