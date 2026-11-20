@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.5.0...base-v0.6.0) (2026-11-20)
+
+
+### Features
+
+* **base:** only offer plan and deploy of domains a push changes ([#29](https://github.com/ErrorCollector/ansible-infra/issues/29)) ([95838c2](https://github.com/ErrorCollector/ansible-infra/commit/95838c2940721c1dc2815a51f450f5c39c49b2a2))
+
 ## [0.5.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.4.1...base-v0.5.0) (2026-11-20)
 
 
