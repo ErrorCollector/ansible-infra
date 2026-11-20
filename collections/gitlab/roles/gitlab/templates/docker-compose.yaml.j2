@@ -41,7 +41,7 @@ services:
 
     postgres_registry:
         container_name: gitlab_postgres_registry
-        image: {{ gitlab_registry_db_image }}
+        image: {{ gitlab_registry_db_image }}:{{ gitlab_registry_db_version }}
         restart: always
         healthcheck:
             test: [ "CMD", "pg_isready", "-d", "{{ gitlab_registry_db_user }}", "-U", "{{ gitlab_registry_db_user }}" ]

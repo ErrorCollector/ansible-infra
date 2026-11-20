@@ -21,6 +21,11 @@ jobs:
             -   run: pip install -r requirements-dev.txt
             -   name: yamllint
                 run: yamllint --strict .
+            -   name: checksums of pinned downloads
+                # Renovate updates the versions, the checksums next to them have to follow
+                run: scripts/check-checksums.py
+                env:
+                    GITHUB_TOKEN: ${{ github.token }}
             -   name: ansible-lint (per collection)
                 # The collections are linked into ansible-lint's collection path, so playbooks
                 # find their roles by FQCN (errorcollector.base.reboot). The yamllint config is
