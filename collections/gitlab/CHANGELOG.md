@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.2.0...gitlab-v0.3.0) (2026-11-20)
+
+
+### Features
+
+* **gitlab:** gitlab server role, local deploys only ([#27](https://github.com/ErrorCollector/ansible-infra/issues/27)) ([9822f77](https://github.com/ErrorCollector/ansible-infra/commit/9822f77e88a5fe121088a5a3de52d03c439679ff))
+
 ## [0.2.0](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.1.0...gitlab-v0.2.0) (2026-11-20)
 
 
