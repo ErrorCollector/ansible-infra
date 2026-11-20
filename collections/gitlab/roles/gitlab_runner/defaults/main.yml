@@ -11,11 +11,11 @@ gitlab_runner_timezone: Europe/Berlin
 gitlab_runner_concurrent: 4
 gitlab_runner_request_concurrency: 3
 
-# Job containers run privileged and get the Docker socket of the host (docker builds, docker compose in jobs).
-# Either lets every job of every project that may use the runner take over the host: turn both off where no
-# job needs them, or keep such jobs on separate, restricted runners.
-gitlab_runner_privileged: true
-gitlab_runner_docker_socket: true
+# Job containers privileged and/or with the Docker socket of the host (docker builds, docker compose in jobs).
+# Either lets every job of every project that may use the runner take over the host, so both are off by
+# default: turn them on only for runners whose jobs need them, ideally restricted ones.
+gitlab_runner_privileged: false
+gitlab_runner_docker_socket: false
 
 # Cache: local (gitlab_runner_cache_dir) or s3 (bucket, region and keys below)
 gitlab_runner_cache_type: local
