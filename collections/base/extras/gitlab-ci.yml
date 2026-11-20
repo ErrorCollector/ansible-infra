@@ -21,7 +21,16 @@
 #   INFRA_SSH_KEY     private key of the provisioning user
 #   INFRA_VAULT_PASS  vault password
 #   INFRA_KNOWN_HOSTS known_hosts of all hosts (host key checking is always on in CI)
-# Deploy is a manual job on the default branch and never touches the inventory group gitlab_server.
+# Deploy is a manual job on the default branch and leaves out the inventory group gitlab_server. The GitLab server
+# gets a button of its own: the job restarts the GitLab that runs it (the runner keeps going and reports back once
+# GitLab is up again), so it is never part of another deploy. Keep the local deploy as fallback.
+#
+#   deploy:gitlab:server:
+#       extends: .infra:deploy
+#       variables:
+#           DOMAIN: gitlab
+#           HOSTS: gitlab
+#           INFRA_GITLAB_SERVER: "true"
 #
 # Both jobs only appear when the push changes requirements.d/$DOMAIN.yml (the version of the domain) or a file
 # matching INFRA_CHANGES (default: inventory, group_vars, host_vars, templates, site.yml, ansible.cfg).

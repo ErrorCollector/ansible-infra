@@ -38,10 +38,33 @@
         mode: "0600"
     diff: false
 
+-   name: Read the running gitlab container
+    community.docker.docker_container_info:
+        name: gitlab
+    register: gitlab_container
+
+# Before a version change: config (gitlab-ctl backup-etc, config/config_backup) and data (gitlab-backup, uploaded to
+# backup_upload_connection) of the running GitLab. Skipped in check mode, make plan shows it as skipped.
+-   name: Back up GitLab before the version change
+    ansible.builtin.command:
+        cmd: >-
+            docker compose exec -T gitlab sh -c
+            'gitlab-ctl backup-etc && gitlab-backup create SKIP={{ gitlab_backup_before_upgrade_skip }}'
+        chdir: "{{ gitlab_dir }}"
+    changed_when: true
+    when:
+        - gitlab_backup_before_upgrade | bool
+        - gitlab_container.exists
+        - gitlab_container.container.State.Running
+        - gitlab_container.container.Config.Image != gitlab_image ~ ':' ~ gitlab_version
+
 # Recreates only the services whose definition changed; a new GITLAB_OMNIBUS_CONFIG or version recreates
-# GitLab (several minutes downtime, upgrade migrations)
+# GitLab (several minutes downtime, upgrade migrations). Waits until GitLab is healthy again, so a following
+# runner deploy finds it up.
 -   name: Start or update gitlab
     community.docker.docker_compose_v2:
         project_src: "{{ gitlab_dir }}"
         pull: missing
+        wait: true
+        wait_timeout: "{{ gitlab_wait_timeout }}"
     when: not (ansible_check_mode and gitlab_dir_result is changed)

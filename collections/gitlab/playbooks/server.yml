@@ -1,6 +1,7 @@
 # GitLab server, imported by the project site.yml: import_playbook: errorcollector.gitlab.server
-# Deployed locally only: make deploy DOMAIN=gitlab HOSTS=<server>; ci-deploy excludes the group gitlab_server and the
-# role refuses to run under GitLab CI. Update the server before its runners.
+# From CI only in a job of its own (INFRA_GITLAB_SERVER=true, HOSTS=<server>, see extras/gitlab-ci.yml of
+# errorcollector.base), otherwise ci-deploy excludes the group gitlab_server and the role refuses to run. Locally:
+# make deploy DOMAIN=gitlab HOSTS=<server>. Update the server before its runners.
 -   name: GitLab server
     hosts: gitlab_server
     become: true

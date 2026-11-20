@@ -126,10 +126,15 @@ shell: check-vault ## Shell environment only (no container restarts): [HOSTS=h1,
 
 # --------------------------------------------------
 # GitLab CI (extras/gitlab-ci.yml)
-# The GitLab server is never deployed from CI: the inventory group gitlab_server is always excluded.
+# The inventory group gitlab_server is excluded from CI deploys. Only a job of its own opts in with
+# INFRA_GITLAB_SERVER=true and HOSTS=<server>: it restarts the GitLab that runs it.
 # --------------------------------------------------
 
+ifeq ($(INFRA_GITLAB_SERVER),true)
+CI_LIMIT = --limit '$(HOSTS)'
+else
 CI_LIMIT = --limit '$(if $(filter-out all,$(HOSTS)),$(HOSTS),all),!gitlab_server'
+endif
 
 .PHONY: ci-plan
 # Without --diff: job logs are readable for every developer of the project, and not every template keeps its
@@ -142,10 +147,12 @@ ci-plan: check-vault check-collections ## CI: dry run (changed tasks per host, n
 		END { if (!found) print "  no changes" }' | (echo "Hosts with changes:"; cat)
 
 .PHONY: ci-deploy
-ci-deploy: check-vault check-collections ## CI: roll out, never the GitLab server: [DOMAIN=…] [HOSTS=…|all]
+ci-deploy: check-vault check-collections ## CI: roll out without the GitLab server: [DOMAIN=…] [HOSTS=…|all] [INFRA_GITLAB_SERVER=true HOSTS=<server>]
 ifndef GITLAB_CI
 	$(error ci-deploy only runs in GitLab CI, locally: make deploy)
 endif
+	@if [ "$(INFRA_GITLAB_SERVER)" = true ] && { [ -z "$(HOSTS)" ] || [ "$(HOSTS)" = all ]; }; then \
+		echo "❌ INFRA_GITLAB_SERVER=true needs HOSTS=<server>"; exit 1; fi
 	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(CI_LIMIT) $(TAGS_ARG) $(PLAYBOOK)
 
 # --------------------------------------------------
