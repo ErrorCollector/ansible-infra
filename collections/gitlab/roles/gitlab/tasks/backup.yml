@@ -1,0 +1,53 @@
+# Cron jobs on the host: config and data backups (gitlab-backup) to S3, log in gitlab_backup_logfile.
+# The AWS keys are set as cron environment variables of root.
+-   name: Set AWS_ACCESS_KEY_ID environment variable
+    ansible.builtin.cron:
+        name: "AWS_ACCESS_KEY_ID"
+        env: "yes"
+        value: "{{ gitlab_backup_aws_access_key_id }}"
+    no_log: true
+
+-   name: Set AWS_SECRET_ACCESS_KEY environment variable
+    ansible.builtin.cron:
+        name: "AWS_SECRET_ACCESS_KEY"
+        env: "yes"
+        value: "{{ gitlab_backup_aws_secret_access_key }}"
+    no_log: true
+
+-   name: Daily Gitlab Config Backup Cron
+    ansible.builtin.cron:
+        name: "Daily Gitlab Config Backup"
+        minute: "0"
+        hour: "2"
+        job: >
+            cd {{ gitlab_dir }} &&
+            /bin/docker compose exec -T gitlab gitlab-ctl backup-etc &&
+            /usr/bin/aws s3 sync {{ gitlab_home }}/config/config_backup s3://{{ gitlab_backup_s3_bucket }}/config_backup >> {{ gitlab_backup_logfile }} 2>&1
+
+-   name: Daily Gitlab Backup Cron
+    ansible.builtin.cron:
+        name: "Daily Gitlab Backup"
+        minute: "10"
+        hour: "2"
+        weekday: "1-6"
+        job: >
+            cd {{ gitlab_dir }} &&
+            /bin/docker compose exec -T gitlab gitlab-backup create SKIP=registry,artifacts >> {{ gitlab_backup_logfile }} 2>&1
+
+-   name: Weekly Gitlab Full Backup Cron
+    ansible.builtin.cron:
+        name: "Weekly Gitlab Full Backup"
+        minute: "30"
+        hour: "5"
+        weekday: "0"
+        job: >
+            cd {{ gitlab_dir }} &&
+            /bin/docker compose exec -T gitlab gitlab-backup create >> {{ gitlab_backup_logfile }} 2>&1
+
+-   name: Install logrotate config for gitlab backup
+    ansible.builtin.template:
+        src: docker-backup.logrotate.j2
+        dest: /etc/logrotate.d/gitlab-backup
+        owner: root
+        group: root
+        mode: "0644"

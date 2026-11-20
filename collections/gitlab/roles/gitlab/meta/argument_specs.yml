@@ -1,0 +1,63 @@
+argument_specs:
+    main:
+        short_description: GitLab CE (omnibus) in Docker, deployed locally only
+        description:
+            - GitLab with the omnibus config of the project, registry metadata database and backup cron jobs to S3.
+              Refuses to deploy under GitLab CI (dry runs are fine); the domain playbook errorcollector.gitlab.server runs it.
+            - A new version or omnibus config recreates GitLab (minutes of downtime). Update the runners afterwards.
+        options:
+            gitlab_hostname:
+                type: str
+                required: true
+                description: Host name, C(external_url) is C(https://<hostname>).
+            gitlab_dir:
+                type: str
+                required: true
+                description: Directory of the compose project.
+            gitlab_home:
+                type: str
+                required: true
+                description: Data directory (config, logs, data, registry, postgres_registry).
+            gitlab_omnibus_config:
+                type: str
+                required: true
+                description: GITLAB_OMNIBUS_CONFIG after C(external_url), may reference vault variables.
+            gitlab_version:
+                type: str
+                description: Image tag.
+            gitlab_image:
+                type: str
+                description: Image without tag.
+            gitlab_ports:
+                type: list
+                elements: str
+                description: Published ports.
+            gitlab_registry_db_enabled:
+                type: bool
+                description: Registry metadata database container postgres_registry.
+            gitlab_registry_db_image:
+                type: str
+                description: Image of postgres_registry.
+            gitlab_registry_db_user:
+                type: str
+                description: Database user for the health check.
+            gitlab_env_template:
+                type: str
+                description: Template of the .env of the compose project (project path), empty for none.
+            gitlab_backup_image:
+                type: str
+                description: Backup sidecar image, empty for none.
+            gitlab_backup_s3_bucket:
+                type: str
+                required: true
+                description: S3 bucket of the config backups.
+            gitlab_backup_logfile:
+                type: str
+                description: Log of the backup cron jobs.
+            gitlab_backup_aws_access_key_id:
+                type: str
+                description: AWS key for the config backups (vault).
+            gitlab_backup_aws_secret_access_key:
+                type: str
+                no_log: true
+                description: AWS secret (vault).
