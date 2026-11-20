@@ -1,0 +1,14 @@
+# Managed by Ansible (errorcollector.web.traefik). Applies to every router without its own TLS option.
+# TLS 1.2+ only, with TLS 1.2 only ECDHE with AEAD (GCM, ChaCha20): no CBC suites, which e.g. internet.nl reports as
+# insecure. Go decides the TLS 1.3 suites; curves stay at the Go default (including X25519MLKEM768).
+tls:
+    options:
+        default:
+            minVersion: VersionTLS12
+            cipherSuites:
+                - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+                - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+                - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+                - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+                - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+                - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256

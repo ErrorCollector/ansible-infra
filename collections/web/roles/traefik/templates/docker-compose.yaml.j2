@@ -1,0 +1,43 @@
+services:
+    traefik:
+        image: {{ traefik_image }}:{{ traefik_version }}
+        container_name: traefik
+        restart: unless-stopped
+        security_opt:
+            - no-new-privileges:true
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./traefik.yml:/etc/traefik/traefik.yml:ro
+            - ./dynamic:/etc/traefik/dynamic:ro
+            - ./letsencrypt:/letsencrypt
+            # local plugins (traefik_local_plugins), empty without plugins
+            - ./plugins-local:/plugins-local:ro
+        healthcheck:
+            test: ["CMD", "traefik", "healthcheck", "--ping"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        labels:
+            traefik.enable: "true"
+            traefik.http.routers.dashboard.rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard`)"
+            traefik.http.routers.dashboard.entrypoints: dashboard
+            traefik.http.routers.dashboard.service: api@internal
+            # / -> /dashboard/ (relative redirect, keeps the scheme of the proxy in front, e.g. Pangolin)
+            traefik.http.routers.dashboard-root.rule: "Path(`/`)"
+            traefik.http.routers.dashboard-root.entrypoints: dashboard
+            traefik.http.routers.dashboard-root.middlewares: dashboard-root-redirect
+            traefik.http.routers.dashboard-root.service: api@internal
+            traefik.http.middlewares.dashboard-root-redirect.redirectregex.regex: "^.*$$"
+            traefik.http.middlewares.dashboard-root-redirect.redirectregex.replacement: /dashboard/
+        networks:
+            - traefik
+            - pangolin
+
+networks:
+    traefik:
+        external: true
+    pangolin:
+        external: true

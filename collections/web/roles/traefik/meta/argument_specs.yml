@@ -1,0 +1,80 @@
+argument_specs:
+    main:
+        short_description: Traefik v3 reverse proxy with Let's Encrypt in Docker
+        description:
+            - Publishes 80 (redirect to HTTPS, ACME challenge) and 443. Dashboard, API and ping on an internal entrypoint,
+              reachable only through the docker network pangolin.
+            - C(dynamic/tls.yml) sets C(tls.options.default) to TLS 1.2+ with AEAD suites only. Containers join the docker
+              network traefik (created with IPv6) and set their own labels.
+        options:
+            traefik_acme_email:
+                type: str
+                required: true
+                description: Let's Encrypt account e-mail.
+            traefik_acme_staging:
+                type: bool
+                default: false
+                description: Use the Let's Encrypt staging CA.
+            traefik_dir:
+                type: str
+                default: /opt/traefik
+                description: Directory of the compose project.
+            traefik_version:
+                type: str
+                description: Image tag.
+            traefik_image:
+                type: str
+                default: traefik
+                description: Image without tag.
+            traefik_dashboard_port:
+                type: int
+                default: 8080
+                description: Internal dashboard entrypoint.
+            traefik_log_level:
+                type: str
+                default: INFO
+                description: Log level.
+            traefik_access_log:
+                type: bool
+                default: false
+                description: Access log to stdout.
+            traefik_redirects:
+                type: list
+                elements: dict
+                default: []
+                description: Static host redirects.
+                options:
+                    host:
+                        type: str
+                        required: true
+                        description: Host to redirect.
+                    target:
+                        type: str
+                        required: true
+                        description: Redirect target URL.
+                    permanent:
+                        type: bool
+                        default: false
+                        description: 301 instead of 302.
+            traefik_local_plugins:
+                type: list
+                elements: dict
+                default: []
+                description: Local plugins checked out from git; a change restarts Traefik.
+                options:
+                    name:
+                        type: str
+                        required: true
+                        description: Plugin name in the middleware labels.
+                    module:
+                        type: str
+                        required: true
+                        description: Module path from go.mod (host/owner/name).
+                    repo:
+                        type: str
+                        required: true
+                        description: Git repository.
+                    version:
+                        type: str
+                        required: true
+                        description: Git tag.
