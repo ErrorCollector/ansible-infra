@@ -1,0 +1,56 @@
+# fzf powers zoxide's interactive `zi`; unlike zoxide it is packaged in EPEL 10
+-   name: Install fzf
+    ansible.builtin.dnf:
+        name: fzf
+        state: present
+
+-   name: Create zoxide directory
+    ansible.builtin.file:
+        path: "/opt/zoxide-{{ common_zoxide_version }}"
+        state: directory
+        mode: "0755"
+
+# zoxide (`z`) is not packaged in EPEL 10, so install the static release binary
+-   name: Download zoxide
+    ansible.builtin.unarchive:
+        src: >-
+            https://github.com/ajeetdsouza/zoxide/releases/download/v{{ common_zoxide_version }}/zoxide-{{ common_zoxide_version }}-{{
+            ansible_architecture }}-unknown-linux-musl.tar.gz
+        dest: "/opt/zoxide-{{ common_zoxide_version }}"
+        remote_src: true
+        include:
+            - zoxide
+        creates: "/opt/zoxide-{{ common_zoxide_version }}/zoxide"
+    # the target directory does not exist yet in --check mode
+    ignore_errors: "{{ ansible_check_mode }}"
+
+# /usr/bin, not /usr/local/bin: root shells via sudo (secure_path) lack /usr/local/bin
+-   name: Link zoxide into PATH
+    ansible.builtin.file:
+        src: "/opt/zoxide-{{ common_zoxide_version }}/zoxide"
+        dest: /usr/bin/zoxide
+        state: link
+        force: true
+
+-   name: Remove old zoxide link from /usr/local/bin
+    ansible.builtin.file:
+        path: /usr/local/bin/zoxide
+        state: absent
+
+-   name: Enable zoxide (z) for interactive bash shells
+    ansible.builtin.copy:
+        src: zoxide.sh
+        dest: /etc/profile.d/zoxide.sh
+        mode: "0644"
+
+-   name: Install shell aliases for all users
+    ansible.builtin.copy:
+        src: aliases.sh
+        dest: "/etc/profile.d/{{ infra_brand }}-aliases.sh"
+        mode: "0644"
+
+-   name: Show full path in bash prompt for all users
+    ansible.builtin.copy:
+        src: prompt.sh
+        dest: "/etc/profile.d/{{ infra_brand }}-prompt.sh"
+        mode: "0644"

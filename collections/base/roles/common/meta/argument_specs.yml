@@ -1,0 +1,58 @@
+argument_specs:
+    main:
+        short_description: Base of every host
+        description:
+            - SSH keys of the provisioning user, EPEL and packages, registry logins, Docker log rotation, shell
+              environment (tag C(shell)), dnf-automatic with update metrics C(infra_*) for node_exporter (tag C(updates)),
+              no firewalld (tag C(firewall)).
+            - File and unit names carry I(infra_brand), e.g. C(/etc/profile.d/<brand>-prompt.sh) and
+              C(<brand>-update-status.timer).
+        options:
+            infra_brand:
+                type: str
+                required: true
+                description: Short project name used in file and unit names, e.g. C(example).
+            common_ssh_keys:
+                type: list
+                elements: str
+                description: Public keys of the provisioning user on all hosts.
+            common_extra_ssh_keys:
+                type: list
+                elements: str
+                description: Additional public keys on single hosts (host_vars).
+            common_packages:
+                type: list
+                elements: str
+                description: Packages installed on every host.
+            common_docker_registries:
+                type: list
+                elements: dict
+                description: Registries the Docker daemon logs into.
+                options:
+                    url:
+                        type: str
+                        description: Registry URL, omitted for Docker Hub.
+                    username:
+                        type: str
+                        required: true
+                        description: User name.
+                    password:
+                        type: str
+                        required: true
+                        no_log: true
+                        description: Password or token (vault).
+            common_docker_daemon_json:
+                type: bool
+                description: Deploy C(/etc/docker/daemon.json); false where another role owns it.
+            common_docker_log_max_size:
+                type: str
+                description: json-file log driver C(max-size).
+            common_docker_log_max_file:
+                type: str
+                description: json-file log driver C(max-file).
+            common_zoxide_version:
+                type: str
+                description: zoxide release.
+            common_textfile_dir:
+                type: str
+                description: node_exporter textfile collector directory for the update metrics.

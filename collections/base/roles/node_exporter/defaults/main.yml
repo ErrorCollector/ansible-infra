@@ -1,0 +1,6 @@
+node_exporter_dir: /opt/node_exporter
+# Textfile collector, errorcollector.base.common writes the update metrics (infra_*) there
+node_exporter_textfile_dir: /var/lib/node_exporter/textfile
+# renovate: datasource=docker depName=quay.io/prometheus/node-exporter
+node_exporter_version: v1.13.1
+node_exporter_image: quay.io/prometheus/node-exporter

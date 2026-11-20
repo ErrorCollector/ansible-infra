@@ -1,0 +1,10 @@
+# Domain playbook, imported by the project site.yml: import_playbook: errorcollector.base.site
+# Every host gets common and node_exporter; Galaxy roles such as geerlingguy.swap stay in the project.
+-   name: Base
+    hosts: all
+    become: true
+    roles:
+        -   role: errorcollector.base.common
+            tags: [base, common]
+        -   role: errorcollector.base.node_exporter
+            tags: [base, node_exporter, updates]

@@ -1,0 +1,25 @@
+# Host metrics including the textfile collector, host network :9100. Who can reach it is up to the cloud firewall.
+-   name: Ensure project directory exists
+    ansible.builtin.file:
+        path: "{{ node_exporter_dir }}"
+        state: directory
+        mode: "0755"
+    register: node_exporter_dir_result
+
+-   name: Ensure textfile directory exists
+    ansible.builtin.file:
+        path: "{{ node_exporter_textfile_dir }}"
+        state: directory
+        mode: "0755"
+
+-   name: Deploy docker-compose.yaml
+    ansible.builtin.template:
+        src: docker-compose.yaml.j2
+        dest: "{{ node_exporter_dir }}/docker-compose.yaml"
+        mode: "0644"
+
+-   name: Deploy node exporter
+    community.docker.docker_compose_v2:
+        project_src: "{{ node_exporter_dir }}"
+        pull: missing
+    when: not (ansible_check_mode and node_exporter_dir_result is changed)

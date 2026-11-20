@@ -1,0 +1,25 @@
+# SSH keys of the provisioning user on all hosts (group_vars) and on single hosts only (host_vars):
+#   common_ssh_keys:
+#       - "ssh-ed25519 AAAA... name@host"
+common_ssh_keys: []
+common_extra_ssh_keys: []
+
+common_packages: []
+
+# Registries the Docker daemon logs into, password from the vault; without url: Docker Hub
+#   common_docker_registries:
+#       -   url: https://registry.example.com
+#           username: pull-user
+#           password: "{{ registry_pull_token }}"
+common_docker_registries: []
+
+# /etc/docker/daemon.json with log rotation; false where another role owns daemon.json
+common_docker_daemon_json: true
+common_docker_log_max_size: 100m
+common_docker_log_max_file: "3"
+
+# renovate: datasource=github-releases depName=ajeetdsouza/zoxide extractVersion=^v(?<version>.+)$
+common_zoxide_version: "0.10.0"
+
+# Textfile collector directory of node_exporter, the update metrics (infra_*) are written there
+common_textfile_dir: "{{ node_exporter_textfile_dir | default('/var/lib/node_exporter/textfile') }}"

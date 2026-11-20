@@ -15,6 +15,7 @@ tags:
 repository: https://github.com/ErrorCollector/ansible-infra
 issues: https://github.com/ErrorCollector/ansible-infra/issues
 dependencies:
+  ansible.posix: '>=1.5.0'
   community.docker: '>=4.0.0'
 build_ignore:
   - '*.tar.gz'
