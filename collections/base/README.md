@@ -148,7 +148,8 @@ deploy:pangolin:
 - `.infra:plan` (stage `test`): `--check` on protected branches, then the hosts with changes. No `--diff`: job logs
   are readable for every developer of the project and not every template keeps its secrets out of the diff; the
   full diff comes from `make plan` locally.
-- `.infra:deploy` (stage `deploy`): manual job on the default branch, environment `production`, one deploy at a time
+- `.infra:deploy` (stage `deploy`): manual job on the default branch, one environment per job (`production/<job>`: "Prevent outdated deployment jobs"
+  only blocks a button once the same job ran in a newer pipeline), one deploy at a time
   per project (`resource_group`). `HOSTS` limits it; the inventory group `gitlab_server` is excluded unless the job
   sets `INFRA_GITLAB_SERVER: "true"` and `HOSTS: <server>`. Give the GitLab server a button of its own (it restarts
   the GitLab that runs the job) and keep `make deploy` locally as fallback.
