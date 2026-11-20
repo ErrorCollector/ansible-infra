@@ -29,7 +29,7 @@ gitlab_runner_aws_secret_access_key: ""
 gitlab_runner_ecr_enabled: false
 gitlab_runner_ecr_registry: ""
 # renovate: datasource=github-releases depName=awslabs/amazon-ecr-credential-helper extractVersion=^v(?<version>.+)$
-gitlab_runner_ecr_helper_version: "0.10.1"
+gitlab_runner_ecr_helper_version: "0.13.0"
 gitlab_runner_ecr_helper_arch:
     x86_64: amd64
     aarch64: arm64
