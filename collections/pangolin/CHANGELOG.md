@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/ErrorCollector/ansible-infra/compare/pangolin-v0.3.0...pangolin-v0.3.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **pangolin:** update docker.io/fosrl/pangolin docker tag to v1.27.1 ([#41](https://github.com/ErrorCollector/ansible-infra/issues/41)) ([0a334cd](https://github.com/ErrorCollector/ansible-infra/commit/0a334cd807129f0458447f7cabea4c0890fbebb9))
+
 ## [0.3.0](https://github.com/ErrorCollector/ansible-infra/compare/pangolin-v0.2.0...pangolin-v0.3.0) (2026-11-20)
 
 

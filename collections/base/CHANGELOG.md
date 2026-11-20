@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.8.1...base-v0.9.0) (2026-11-20)
+
+
+### Features
+
+* **base:** status and reboot jobs for GitLab CI ([#37](https://github.com/ErrorCollector/ansible-infra/issues/37)) ([876dfb6](https://github.com/ErrorCollector/ansible-infra/commit/876dfb647759bc972eb33ea64e551ea2689ffc84))
+
+
+### Bug Fixes
+
+* let Renovate cover every pinned version ([#39](https://github.com/ErrorCollector/ansible-infra/issues/39)) ([e3f574e](https://github.com/ErrorCollector/ansible-infra/commit/e3f574e9016b2f2ea9b8ae7849184b8b148b2ad1))
+
 ## [0.8.1](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.8.0...base-v0.8.1) (2026-11-20)
 
 
