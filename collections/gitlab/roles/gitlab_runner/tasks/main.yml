@@ -1,0 +1,15 @@
+# Docker data on a separate volume (gitlab_runner_docker_data_root), otherwise daemon.json comes from
+# errorcollector.base.common
+-   name: Docker on a separate volume
+    ansible.builtin.import_tasks: docker.yml
+    when: gitlab_runner_docker_data_root | length > 0
+
+-   name: ECR pull for job images
+    ansible.builtin.import_tasks: ecr.yml
+    when: gitlab_runner_ecr_enabled | bool
+
+-   name: Runner
+    ansible.builtin.import_tasks: runner.yml
+
+-   name: Docker and cache cleanup
+    ansible.builtin.import_tasks: cleanup.yml

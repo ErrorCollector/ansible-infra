@@ -1,0 +1,127 @@
+argument_specs:
+    main:
+        short_description: GitLab Runner (docker executor) in Docker
+        description:
+            - Runner container with config.toml (reloaded by the runner, no restart), local or S3 cache, optional ECR pull
+              for job images, optional Docker data on a separate volume, and a cleanup timer for images, volumes and
+              the local cache.
+            - Docker is only restarted when daemon.json or the containerd config change, the runner container only when
+              its compose file changes. Both abort running jobs, so roll out a runner from another runner.
+        options:
+            gitlab_runner_url:
+                type: str
+                required: true
+                description: GitLab URL.
+            gitlab_runner_id:
+                type: int
+                required: true
+                description: Runner id in GitLab.
+            gitlab_runner_token:
+                type: str
+                required: true
+                no_log: true
+                description: Runner authentication token (vault).
+            gitlab_runner_name:
+                type: str
+                description: Runner name, default the inventory hostname.
+            gitlab_runner_version:
+                type: str
+                description: Image tag (alpine-vX.Y.Z).
+            gitlab_runner_image:
+                type: str
+                description: Image without tag.
+            gitlab_runner_dir:
+                type: str
+                description: Directory of the compose project.
+            gitlab_runner_cache_dir:
+                type: str
+                description: Local cache directory.
+            gitlab_runner_timezone:
+                type: str
+                description: TZ of the runner container.
+            gitlab_runner_concurrent:
+                type: int
+                description: Concurrent jobs.
+            gitlab_runner_request_concurrency:
+                type: int
+                description: Concurrent job requests.
+            gitlab_runner_privileged:
+                type: bool
+                description: Job containers run privileged (allows a job to take over the host).
+            gitlab_runner_docker_socket:
+                type: bool
+                description: Mount the Docker socket of the host into job containers (allows a job to take over the host).
+            gitlab_runner_cache_type:
+                type: str
+                choices: [local, s3]
+                description: Cache backend.
+            gitlab_runner_cache_s3_server:
+                type: str
+                description: S3 endpoint.
+            gitlab_runner_cache_s3_bucket:
+                type: str
+                description: S3 bucket.
+            gitlab_runner_aws_region:
+                type: str
+                description: AWS region of the S3 bucket and ECR.
+            gitlab_runner_aws_access_key_id:
+                type: str
+                description: AWS key for the S3 cache and ECR (vault).
+            gitlab_runner_aws_secret_access_key:
+                type: str
+                no_log: true
+                description: AWS secret (vault).
+            gitlab_runner_ecr_enabled:
+                type: bool
+                description: ECR credential helper for job images.
+            gitlab_runner_ecr_registry:
+                type: str
+                description: ECR registry host.
+            gitlab_runner_ecr_helper_version:
+                type: str
+                description: amazon-ecr-credential-helper release.
+            gitlab_runner_ecr_helper_arch:
+                type: dict
+                description: Architecture names of the helper releases per ansible_architecture.
+            gitlab_runner_ecr_helper_checksums:
+                type: dict
+                description: SHA256 per ansible_architecture (C(sha256:...)), must match the version.
+            gitlab_runner_docker_data_root:
+                type: str
+                description: Docker data-root on a separate volume, empty for the Docker default.
+            gitlab_runner_containerd_root:
+                type: str
+                description: containerd root on a separate volume.
+            gitlab_runner_docker_log_max_size:
+                type: str
+                description: json-file C(max-size) in daemon.json.
+            gitlab_runner_docker_log_max_file:
+                type: str
+                description: json-file C(max-file) in daemon.json.
+            gitlab_runner_cleanup_oncalendar:
+                type: str
+                description: systemd OnCalendar of the cleanup timer.
+            gitlab_runner_cleanup_randomized_delay:
+                type: int
+                description: RandomizedDelaySec of the cleanup timer.
+            gitlab_runner_cleanup_cache_max_age_days:
+                type: int
+                description: Local cache files older than this are removed.
+            gitlab_runner_cleanup_cache_max_size_mb:
+                type: int
+                description: Size limit of the local cache.
+            gitlab_runner_cleanup_volume_max_age_days:
+                type: int
+                description: Runner volumes unused for this many days are removed, 0 keeps them.
+            gitlab_runner_cleanup_image_max_age:
+                type: str
+                description: Unused images older than this are removed above the warning level.
+            gitlab_runner_cleanup_builder_max_age:
+                type: str
+                description: Build cache older than this is removed.
+            gitlab_runner_cleanup_disk_warn_percent:
+                type: int
+                description: Disk usage of the Docker root that triggers the image and volume cleanup.
+            gitlab_runner_cleanup_disk_critical_percent:
+                type: int
+                description: Disk usage that triggers the aggressive cleanup.
