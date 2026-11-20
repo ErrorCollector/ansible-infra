@@ -15,7 +15,7 @@ gitlab_registry_db_enabled: true
 gitlab_registry_db_image: postgres
 # Minor updates only: a major needs a dump/restore of the registry database
 # renovate: datasource=docker depName=postgres
-gitlab_registry_db_version: 16.15-alpine
+gitlab_registry_db_version: 16.16-alpine
 gitlab_registry_db_user: "{{ postgres_user | default('registry') }}"
 
 # .env of the compose project (secrets of the registry database and the backup sidecar), a template of the project:
