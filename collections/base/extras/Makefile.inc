@@ -49,6 +49,17 @@ check-vault:
 	@test -f $(VAULT_FILE) || (echo "❌ Missing $(VAULT_FILE)"; exit 1)
 
 # Targets with 2>/dev/null would otherwise stay silently empty when Docker is not running
+# HOSTS, TAGS & co. end up in the command line. In CI they can come from pipeline variables (Run pipeline), so only
+# plain host patterns, tags and paths are accepted; the shell reads the values from the environment, not Make.
+.PHONY: check-args
+check-args:
+	@for value in "$$HOSTS" "$$TAGS" "$$DOMAIN" "$$INVENTORY" "$$PLAYBOOK" "$$VAULT_FILE"; do \
+		case "$$value" in *[!A-Za-z0-9_.,:*!/-]*) \
+			echo "❌ HOSTS, TAGS, DOMAIN, INVENTORY, PLAYBOOK and VAULT_FILE may only contain letters, digits and _ . , : * ! / -"; \
+			exit 1;; \
+		esac; \
+	done
+
 .PHONY: check-docker
 check-docker:
 ifndef GITLAB_CI
@@ -91,11 +102,11 @@ dev: ## Use a local checkout of a collection: DOMAIN=pangolin SRC=../ansible-inf
 # --------------------------------------------------
 
 .PHONY: plan
-plan: check-vault check-collections ## Dry run with diff: [DOMAIN=…] [HOSTS=h1,h2] [TAGS=…]
+plan: check-args check-vault check-collections ## Dry run with diff: [DOMAIN=…] [HOSTS=h1,h2] [TAGS=…]
 	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) $(TAGS_ARG) --check --diff $(PLAYBOOK)
 
 .PHONY: deploy
-deploy: check-vault check-collections ## Roll out: [DOMAIN=…] [HOSTS=h1,h2|all] [TAGS=…], without HOSTS: choose interactively
+deploy: check-args check-vault check-collections ## Roll out: [DOMAIN=…] [HOSTS=h1,h2|all] [TAGS=…], without HOSTS: choose interactively
 	@if [ -n "$(HOSTS)" ]; then \
 		$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) $(TAGS_ARG) $(PLAYBOOK); \
 	else \
@@ -121,7 +132,7 @@ _deploy_interactive:
 provisioning: deploy
 
 .PHONY: shell
-shell: check-vault ## Shell environment only (no container restarts): [HOSTS=h1,h2], default all hosts
+shell: check-args check-vault ## Shell environment only (no container restarts): [HOSTS=h1,h2], default all hosts
 	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) --tags shell $(PLAYBOOK)
 
 # --------------------------------------------------
@@ -139,7 +150,7 @@ endif
 .PHONY: ci-plan
 # Without --diff: job logs are readable for every developer of the project, and not every template keeps its
 # secrets out of the diff. The full diff: make plan (locally).
-ci-plan: check-vault check-collections ## CI: dry run (changed tasks per host, no diff), then the hosts with changes: [DOMAIN=…] [HOSTS=…]
+ci-plan: check-args check-vault check-collections ## CI: dry run (changed tasks per host, no diff), then the hosts with changes: [DOMAIN=…] [HOSTS=…]
 	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) $(TAGS_ARG) --check $(PLAYBOOK) | tee ci-plan.log
 	@echo ""
 	@sed 's/\x1b\[[0-9;]*m//g' ci-plan.log | awk '/^PLAY RECAP/ { recap = 1; next } \
@@ -147,11 +158,11 @@ ci-plan: check-vault check-collections ## CI: dry run (changed tasks per host, n
 		END { if (!found) print "  no changes" }' | (echo "Hosts with changes:"; cat)
 
 .PHONY: ci-deploy
-ci-deploy: check-ci check-vault check-collections ## CI: roll out without the GitLab server: [DOMAIN=…] [HOSTS=…|all] [INFRA_GITLAB_SERVER=true HOSTS=<server>]
+ci-deploy: check-args check-ci check-vault check-collections ## CI: roll out without the GitLab server: [DOMAIN=…] [HOSTS=…|all] [INFRA_GITLAB_SERVER=true HOSTS=<server>]
 	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(CI_LIMIT) $(TAGS_ARG) $(PLAYBOOK)
 
 .PHONY: ci-reboot
-ci-reboot: check-ci check-vault check-collections ## CI: reboot the hosts that need it, one at a time, without the GitLab server: HOSTS=… [FORCE=1] [INFRA_GITLAB_SERVER=true]
+ci-reboot: check-args check-ci check-vault check-collections ## CI: reboot the hosts that need it, one at a time, without the GitLab server: HOSTS=… [FORCE=1] [INFRA_GITLAB_SERVER=true]
 	@test -n "$(HOSTS)" || (echo "❌ HOSTS is required (a runner must not reboot itself, see extras/gitlab-ci.yml)"; exit 1)
 	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(CI_LIMIT) $(if $(FORCE),-e reboot_force=true) errorcollector.base.reboot
 
@@ -175,7 +186,7 @@ endif
 	$(ANSIBLE) ansible-playbook -i $(INIT_INVENTORY) --limit $(HOST) $(INIT_PLAYBOOK)
 
 .PHONY: ping
-ping: ## Ping all hosts: [HOSTS=h1,h2]
+ping: check-args ## Ping all hosts: [HOSTS=h1,h2]
 	$(ANSIBLE) ansible $(or $(HOSTS),all) -i $(INVENTORY) -m ping
 
 .PHONY: inventory
@@ -183,7 +194,7 @@ inventory: ## Show the resolved inventory
 	$(ANSIBLE) ansible-inventory -i $(INVENTORY) --list
 
 .PHONY: os-info
-os-info: check-docker ## Distribution and kernel: [HOSTS=h1,h2]
+os-info: check-args check-docker ## Distribution and kernel: [HOSTS=h1,h2]
 	@$(ANSIBLE) ansible $(or $(HOSTS),all) -i $(INVENTORY) -o -m shell -a \
 		'. /etc/os-release; echo "$$PRETTY_NAME;$$(uname -r)"' \
 		2>/dev/null | sed 's/ | CHANGED | rc=0 | (stdout) /;/' | sort -t ';' -k3,3V -k1,1 \
@@ -195,7 +206,7 @@ os-info: check-docker ## Distribution and kernel: [HOSTS=h1,h2]
 # --------------------------------------------------
 
 .PHONY: reboot-status
-reboot-status: check-docker ## Which hosts need a reboot? [HOSTS=h1,h2]
+reboot-status: check-args check-docker ## Which hosts need a reboot? [HOSTS=h1,h2]
 	@out=$$($(ANSIBLE) ansible $(or $(HOSTS),all) -i $(INVENTORY) -o -m shell -a \
 		'dnf -q needs-restarting -r >/dev/null 2>&1 && r=no || r=YES; echo "$$r;$$(uname -r);$$(uptime -p | sed "s/^up //")"' \
 		2>/dev/null | sed -E 's/ \| CHANGED \| rc=0 \| \(stdout\) /;/; s/ \| (UNREACHABLE|FAILED).*/;ERROR;-;-/' \
@@ -207,7 +218,7 @@ reboot-status: check-docker ## Which hosts need a reboot? [HOSTS=h1,h2]
 	exit $$rc
 
 .PHONY: reboot
-reboot: check-vault check-collections ## Controlled reboot, one host at a time, only if needed: HOSTS=h1,h2|all [FORCE=1]
+reboot: check-args check-vault check-collections ## Controlled reboot, one host at a time, only if needed: HOSTS=h1,h2|all [FORCE=1]
 ifndef HOSTS
 	$(error HOSTS is required. Usage: make reboot HOSTS=mail01 (or HOSTS=all))
 endif
