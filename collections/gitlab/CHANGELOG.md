@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.4.0...gitlab-v0.5.0) (2026-11-20)
+
+
+### Features
+
+* **gitlab:** deploy the GitLab server from its own CI job ([#33](https://github.com/ErrorCollector/ansible-infra/issues/33)) ([466be63](https://github.com/ErrorCollector/ansible-infra/commit/466be63fc7d391c81788bfbac7931a18ae82e42f))
+
 ## [0.4.0](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.3.0...gitlab-v0.4.0) (2026-11-20)
 
 
