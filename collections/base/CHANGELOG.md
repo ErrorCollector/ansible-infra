@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.4.1...base-v0.5.0) (2026-11-20)
+
+
+### Features
+
+* **base:** init, common and node_exporter roles ([#21](https://github.com/ErrorCollector/ansible-infra/issues/21)) ([8914e11](https://github.com/ErrorCollector/ansible-infra/commit/8914e110bbd0b26a717132e925502f5b50b53114))
+
+
+### Bug Fixes
+
+* **base:** CI jobs name ansible.cfg explicitly ([#20](https://github.com/ErrorCollector/ansible-infra/issues/20)) ([edd61fa](https://github.com/ErrorCollector/ansible-infra/commit/edd61fa7e723ac850aa3cb6acf4f4c8d76912fe5))
+
 ## [0.4.1](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.4.0...base-v0.4.1) (2026-11-20)
 
 
