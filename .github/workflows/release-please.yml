@@ -4,15 +4,22 @@ on:
     push:
         branches: [main]
 
+# The release PRs come from the GitHub App errorcollector-release, not from github-actions[bot]:
+# runs triggered by the bot need a manual approval, so CI on the release PRs would never start on its own.
 permissions:
-    contents: write
-    pull-requests: write
+    contents: read
 
 jobs:
     release-please:
         runs-on: ubuntu-latest
         steps:
+            -   id: app-token
+                uses: actions/create-github-app-token@v2.2.1
+                with:
+                    app-id: ${{ secrets.RELEASE_APP_ID }}
+                    private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
             -   uses: googleapis/release-please-action@v5.0.0
                 with:
+                    token: ${{ steps.app-token.outputs.token }}
                     config-file: release-please-config.json
                     manifest-file: .release-please-manifest.json
