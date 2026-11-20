@@ -36,9 +36,13 @@
                 exit 1
             fi
         - install -m 600 "$INFRA_VAULT_PASS" .ansible_vault_pass
-        - chmod 600 "$INFRA_SSH_KEY"
-        - export ANSIBLE_SSH_KEY_FILE="$INFRA_SSH_KEY"
-        - mkdir -p ~/.ssh && install -m 600 "$INFRA_KNOWN_HOSTS" ~/.ssh/known_hosts
+        - install -m 700 -d ~/.ssh
+        - install -m 600 "$INFRA_KNOWN_HOSTS" ~/.ssh/known_hosts
+        # OpenSSH rejects a key without a newline after the last line, and variables often lose it
+        - (cat "$INFRA_SSH_KEY"; echo) > ~/.ssh/infra_key && chmod 600 ~/.ssh/infra_key
+        - export ANSIBLE_SSH_KEY_FILE="$HOME/.ssh/infra_key"
+        # errorcollector.base brings Makefile.inc; the bootstrap target of the project Makefile needs Docker
+        - ansible-galaxy collection install -r requirements.d/base.yml -p collections
         - make install
 
 .infra:plan:
