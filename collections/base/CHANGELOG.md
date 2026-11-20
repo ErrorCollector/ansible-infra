@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.3.0...base-v0.4.0) (2026-11-20)
+
+
+### Features
+
+* **base:** GitLab CI template with plan and deploy jobs ([#16](https://github.com/ErrorCollector/ansible-infra/issues/16)) ([dd62e72](https://github.com/ErrorCollector/ansible-infra/commit/dd62e7278b02b2b407f382799bdd8e1f8b2d2208))
+
 ## [0.3.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.2.0...base-v0.3.0) (2026-11-20)
 
 
