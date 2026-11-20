@@ -45,6 +45,12 @@ argument_specs:
             gitlab_runner_request_concurrency:
                 type: int
                 description: Concurrent job requests.
+            gitlab_runner_privileged:
+                type: bool
+                description: Job containers run privileged (allows a job to take over the host).
+            gitlab_runner_docker_socket:
+                type: bool
+                description: Mount the Docker socket of the host into job containers (allows a job to take over the host).
             gitlab_runner_cache_type:
                 type: str
                 choices: [local, s3]
