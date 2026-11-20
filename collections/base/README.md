@@ -153,5 +153,11 @@ deploy:pangolin:
 - Protected file variables of the project: `INFRA_SSH_KEY` (private key of `provisioning`), `INFRA_VAULT_PASS` and
   `INFRA_KNOWN_HOSTS` (known_hosts of all hosts; host key checking is always on in CI, the jobs fail without it). Use these names rather than `ANSIBLE_*`: with a protected project
   variable of the same name, unprotected branches would silently fall back to a group or instance variable.
+- Plan and deploy of a domain only appear when the push changes `requirements.d/<domain>.yml` or a file matching
+  `INFRA_CHANGES` (default: `inventory.yml`, `ansible.cfg`, `site.yml`, `group_vars/`, `host_vars/`, `templates/`).
+  A Renovate MR for one collection therefore only offers that domain; docs, CI or project app roles offer none.
+  Jobs without a domain set their own `INFRA_CHANGES` (glob with `{a,b}`, e.g. their role and host_vars). A pipeline
+  started by hand (*Run pipeline*), by the API or a schedule has every job. Jobs that follow a deploy extend
+  `.infra:after-deploy` with the same variables.
 - The Renovate regex manager for `requirements.d/` also needs `.gitlab-ci.yml` in its file patterns and a second
   match string for the `remote:` line, so the include and `requirements.d/base.yml` are updated in the same MR.
