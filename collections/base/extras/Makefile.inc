@@ -132,8 +132,10 @@ shell: check-vault ## Shell environment only (no container restarts): [HOSTS=h1,
 CI_LIMIT = --limit '$(if $(filter-out all,$(HOSTS)),$(HOSTS),all),!gitlab_server'
 
 .PHONY: ci-plan
-ci-plan: check-vault check-collections ## CI: dry run with diff, then the hosts with changes: [DOMAIN=…] [HOSTS=…]
-	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) $(TAGS_ARG) --check --diff $(PLAYBOOK) | tee ci-plan.log
+# Without --diff: job logs are readable for every developer of the project, and not every template keeps its
+# secrets out of the diff. The full diff: make plan (locally).
+ci-plan: check-vault check-collections ## CI: dry run (changed tasks per host, no diff), then the hosts with changes: [DOMAIN=…] [HOSTS=…]
+	$(ANSIBLE) ansible-playbook -i $(INVENTORY) $(LIMIT_ARG) $(TAGS_ARG) --check $(PLAYBOOK) | tee ci-plan.log
 	@echo ""
 	@sed 's/\x1b\[[0-9;]*m//g' ci-plan.log | awk '/^PLAY RECAP/ { recap = 1; next } \
 		recap && /changed=[1-9]|failed=[1-9]|unreachable=[1-9]/ { found = 1; print "  " $$0 } \

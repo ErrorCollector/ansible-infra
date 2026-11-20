@@ -20,29 +20,25 @@
 # which GitLab only hands to protected branches, so they only run there:
 #   INFRA_SSH_KEY     private key of the provisioning user
 #   INFRA_VAULT_PASS  vault password
-#   INFRA_KNOWN_HOSTS optional: known_hosts of all hosts, turns host key checking on
+#   INFRA_KNOWN_HOSTS known_hosts of all hosts (host key checking is always on in CI)
 # Deploy is a manual job on the default branch and never touches the inventory group gitlab_server.
 
 .infra:job:
     image: alpine/ansible:2.21.0
     variables:
-        ANSIBLE_HOST_KEY_CHECKING: "False"
+        ANSIBLE_HOST_KEY_CHECKING: "True"
         ANSIBLE_FORCE_COLOR: "true"
     before_script:
         - apk add -q --no-cache bash make git
         - |
-            if [ ! -f "${INFRA_SSH_KEY:-}" ] || [ ! -f "${INFRA_VAULT_PASS:-}" ]; then
-                echo "Protected file variables INFRA_SSH_KEY and INFRA_VAULT_PASS are missing (protected branches only)"
+            if [ ! -f "${INFRA_SSH_KEY:-}" ] || [ ! -f "${INFRA_VAULT_PASS:-}" ] || [ ! -f "${INFRA_KNOWN_HOSTS:-}" ]; then
+                echo "Protected file variables INFRA_SSH_KEY, INFRA_VAULT_PASS and INFRA_KNOWN_HOSTS are missing (protected branches only)"
                 exit 1
             fi
         - install -m 600 "$INFRA_VAULT_PASS" .ansible_vault_pass
         - chmod 600 "$INFRA_SSH_KEY"
         - export ANSIBLE_SSH_KEY_FILE="$INFRA_SSH_KEY"
-        - |
-            if [ -f "${INFRA_KNOWN_HOSTS:-}" ]; then
-                mkdir -p ~/.ssh && install -m 600 "$INFRA_KNOWN_HOSTS" ~/.ssh/known_hosts
-                export ANSIBLE_HOST_KEY_CHECKING=True
-            fi
+        - mkdir -p ~/.ssh && install -m 600 "$INFRA_KNOWN_HOSTS" ~/.ssh/known_hosts
         - make install
 
 .infra:plan:
