@@ -10,12 +10,22 @@
         state: directory
         mode: "0755"
 
-# zoxide (`z`) is not packaged in EPEL 10, so install the static release binary
+# zoxide (`z`) is not packaged in EPEL 10, so install the static release binary,
+# verified against the checksum pinned in common_zoxide_checksums
 -   name: Download zoxide
-    ansible.builtin.unarchive:
-        src: >-
+    ansible.builtin.get_url:
+        url: >-
             https://github.com/ajeetdsouza/zoxide/releases/download/v{{ common_zoxide_version }}/zoxide-{{ common_zoxide_version }}-{{
             ansible_architecture }}-unknown-linux-musl.tar.gz
+        dest: "/opt/zoxide-{{ common_zoxide_version }}/zoxide.tar.gz"
+        checksum: "{{ common_zoxide_checksums[ansible_architecture] }}"
+        mode: "0644"
+    # the target directory does not exist yet in --check mode
+    ignore_errors: "{{ ansible_check_mode }}"
+
+-   name: Unpack zoxide
+    ansible.builtin.unarchive:
+        src: "/opt/zoxide-{{ common_zoxide_version }}/zoxide.tar.gz"
         dest: "/opt/zoxide-{{ common_zoxide_version }}"
         remote_src: true
         include:

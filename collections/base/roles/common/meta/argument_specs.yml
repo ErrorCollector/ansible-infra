@@ -53,6 +53,9 @@ argument_specs:
             common_zoxide_version:
                 type: str
                 description: zoxide release.
+            common_zoxide_checksums:
+                type: dict
+                description: SHA256 of the release archive per architecture (C(sha256:...)), must match the version.
             common_textfile_dir:
                 type: str
                 description: node_exporter textfile collector directory for the update metrics.
