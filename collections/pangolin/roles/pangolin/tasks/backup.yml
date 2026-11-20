@@ -29,11 +29,12 @@
     when: pangolin_running_image.rc == 0
 
 # tar creates the archive here (the rule assumes unarchive); community.general.archive is not a dependency
+# All compose file names: a stack taken over from elsewhere may still use another one
 -   name: Create backup  # noqa: command-instead-of-module
     ansible.builtin.command: >
         tar czf {{ pangolin_backup_file }}
-        --exclude=config/logs --exclude=config/traefik/logs
-        docker-compose.yml config
+        --exclude=config/logs --exclude=config/traefik/logs --ignore-failed-read
+        docker-compose.yml docker-compose.yaml compose.yml compose.yaml config
     args:
         chdir: "{{ pangolin_dir }}"
         creates: "{{ pangolin_backup_file }}"

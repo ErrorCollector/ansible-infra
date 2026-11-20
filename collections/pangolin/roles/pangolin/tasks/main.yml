@@ -44,6 +44,17 @@
         - pangolin_backup_enabled | bool
         - pangolin_changed | bool
 
+# Docker Compose prefers compose.yaml, compose.yml and docker-compose.yaml over docker-compose.yml:
+# a stack taken over from elsewhere must not keep its old file
+-   name: Remove compose files with other names
+    ansible.builtin.file:
+        path: "{{ pangolin_dir }}/{{ item }}"
+        state: absent
+    loop:
+        - compose.yaml
+        - compose.yml
+        - docker-compose.yaml
+
 -   name: Deploy docker-compose.yml
     ansible.builtin.template:
         src: docker-compose.yml.j2
