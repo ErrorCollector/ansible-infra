@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.8.0...base-v0.8.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **base:** one deploy environment per job ([#35](https://github.com/ErrorCollector/ansible-infra/issues/35)) ([161fb97](https://github.com/ErrorCollector/ansible-infra/commit/161fb97c48baf22b20de198f388138bbc8b57735))
+
 ## [0.8.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.7.0...base-v0.8.0) (2026-11-20)
 
 
