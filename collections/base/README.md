@@ -95,3 +95,35 @@ reboot_restart_after:
     -   container: newt
         hosts: "{{ groups['newt'] }}"
 ```
+
+## GitLab CI
+
+`extras/gitlab-ci.yml` holds hidden jobs for plan and deploy; the logic is in the Make targets `ci-plan` and
+`ci-deploy`. Include the file pinned to the same base tag as `requirements.d/base.yml`, then extend the jobs per domain
+(see the header of the file):
+
+```yaml
+include:
+    # renovate: datasource=github-tags packageName=ErrorCollector/ansible-infra depName=errorcollector.base extractVersion=^base-v(?<version>.+)$
+    -   remote: https://raw.githubusercontent.com/ErrorCollector/ansible-infra/base-vX.Y.Z/collections/base/extras/gitlab-ci.yml
+
+plan:pangolin:
+    extends: .infra:plan
+    variables:
+        DOMAIN: pangolin
+
+deploy:pangolin:
+    extends: .infra:deploy
+    variables:
+        DOMAIN: pangolin
+```
+
+- `.infra:plan` (stage `test`): `--check --diff` on protected branches, then the hosts with changes.
+- `.infra:deploy` (stage `deploy`): manual job on the default branch, environment `production`, one deploy at a time
+  per project (`resource_group`). `HOSTS` limits it (e.g. a canary group); the inventory group `gitlab_server` is
+  always excluded, the GitLab server is deployed locally only.
+- Protected file variables of the project: `INFRA_SSH_KEY` (private key of `provisioning`), `INFRA_VAULT_PASS`, optional
+  `INFRA_KNOWN_HOSTS` (turns host key checking on). Use these names rather than `ANSIBLE_*`: with a protected project
+  variable of the same name, unprotected branches would silently fall back to a group or instance variable.
+- The Renovate regex manager for `requirements.d/` also needs `.gitlab-ci.yml` in its file patterns and a second
+  match string for the `remote:` line, so the include and `requirements.d/base.yml` are updated in the same MR.

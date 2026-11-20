@@ -1,0 +1,66 @@
+# errorcollector.base: GitLab CI jobs for the project repos.
+# Include it pinned to the same base tag as requirements.d/base.yml (Renovate updates both in one MR)
+# and extend the hidden jobs per domain:
+#
+#   include:
+#       # renovate: datasource=github-tags packageName=ErrorCollector/ansible-infra depName=errorcollector.base extractVersion=^base-v(?<version>.+)$
+#       -   remote: https://raw.githubusercontent.com/ErrorCollector/ansible-infra/base-vX.Y.Z/collections/base/extras/gitlab-ci.yml
+#
+#   plan:pangolin:
+#       extends: .infra:plan
+#       variables:
+#           DOMAIN: pangolin
+#
+#   deploy:pangolin:
+#       extends: .infra:deploy
+#       variables:
+#           DOMAIN: pangolin
+#
+# Plan runs in the stage "test", deploy in "deploy". Both need protected file variables of the project,
+# which GitLab only hands to protected branches, so they only run there:
+#   INFRA_SSH_KEY     private key of the provisioning user
+#   INFRA_VAULT_PASS  vault password
+#   INFRA_KNOWN_HOSTS optional: known_hosts of all hosts, turns host key checking on
+# Deploy is a manual job on the default branch and never touches the inventory group gitlab_server.
+
+.infra:job:
+    image: alpine/ansible:2.21.0
+    variables:
+        ANSIBLE_HOST_KEY_CHECKING: "False"
+        ANSIBLE_FORCE_COLOR: "true"
+    before_script:
+        - apk add -q --no-cache bash make git
+        - |
+            if [ ! -f "${INFRA_SSH_KEY:-}" ] || [ ! -f "${INFRA_VAULT_PASS:-}" ]; then
+                echo "Protected file variables INFRA_SSH_KEY and INFRA_VAULT_PASS are missing (protected branches only)"
+                exit 1
+            fi
+        - install -m 600 "$INFRA_VAULT_PASS" .ansible_vault_pass
+        - chmod 600 "$INFRA_SSH_KEY"
+        - export ANSIBLE_SSH_KEY_FILE="$INFRA_SSH_KEY"
+        - |
+            if [ -f "${INFRA_KNOWN_HOSTS:-}" ]; then
+                mkdir -p ~/.ssh && install -m 600 "$INFRA_KNOWN_HOSTS" ~/.ssh/known_hosts
+                export ANSIBLE_HOST_KEY_CHECKING=True
+            fi
+        - make install
+
+.infra:plan:
+    extends: .infra:job
+    stage: test
+    rules:
+        -   if: $CI_COMMIT_REF_PROTECTED == "true"
+    script:
+        - make ci-plan
+
+.infra:deploy:
+    extends: .infra:job
+    stage: deploy
+    rules:
+        -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+            when: manual
+    environment:
+        name: production
+    resource_group: infra-deploy
+    script:
+        - make ci-deploy
