@@ -75,7 +75,8 @@
                     retries: 6
                     delay: 5
                     changed_when: false
-                    delegate_to: "{{ reboot_monitoring_host }}"
+                    # ansible-core templates delegate_to before "when": an empty value fails even when skipped
+                    delegate_to: "{{ reboot_monitoring_host | default(inventory_hostname, true) }}"
                     when:
                         - reboot_node_exporter_check | bool
                         - reboot_monitoring_host | length > 0
