@@ -18,7 +18,7 @@ gitlab_registry_db_image: postgres
 gitlab_registry_db_version: 16.16-alpine
 gitlab_registry_db_user: "{{ postgres_user | default('registry') }}"
 
-# .env of the compose project (secrets of the registry database and the backup sidecar), a template of the project:
+# .env of the compose project (secrets of the registry database and the extra services), a template of the project:
 #   gitlab_env_template: "{{ inventory_dir }}/templates/gitlab.env.j2"   (playbook_dir is the collection here)
 gitlab_env_template: ""
 
@@ -28,8 +28,16 @@ gitlab_backup_before_upgrade_skip: registry,artifacts
 # Seconds to wait for healthy containers after docker compose up
 gitlab_wait_timeout: 900
 
-# Sidecar that backs up postgres_registry, empty = none
-gitlab_backup_image: ""
+# More services of the compose project, e.g. a backup sidecar of the project (services: <name>: <definition>).
+# They share the .env (gitlab_env_template) and can depend on postgres_registry:
+#   gitlab_compose_extra_services:
+#       registry_backup:
+#           image: registry.example.org/backup:1.0
+#           container_name: gitlab_registry_backup
+#           restart: always
+#           depends_on: {postgres_registry: {condition: service_healthy}}
+#           env_file: [.env]
+gitlab_compose_extra_services: {}
 
 # Cron backups to S3
 gitlab_backup_logfile: /var/log/gitlab-backup.log

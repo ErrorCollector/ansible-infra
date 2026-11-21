@@ -20,7 +20,7 @@
     loop_control:
         label: "{{ gitlab_home }}/{{ item.path }}"
 
-# Secrets of the registry database and the backup sidecar, template from the project (gitlab_env_template).
+# Secrets of the registry database and the extra services, template from the project (gitlab_env_template).
 # diff: false keeps them out of make plan.
 -   name: Deploy .env
     ansible.builtin.template:

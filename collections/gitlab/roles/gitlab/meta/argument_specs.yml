@@ -58,9 +58,9 @@ argument_specs:
             gitlab_wait_timeout:
                 type: int
                 description: Seconds to wait for healthy containers.
-            gitlab_backup_image:
-                type: str
-                description: Backup sidecar image, empty for none.
+            gitlab_compose_extra_services:
+                type: dict
+                description: More services of the compose project (name → definition), e.g. a backup sidecar.
             gitlab_backup_s3_bucket:
                 type: str
                 required: true
