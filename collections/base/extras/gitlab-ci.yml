@@ -43,17 +43,19 @@
 #           TAGS: monitor
 #           INFRA_CHANGES: "{roles/example.monitor/**/*,host_vars/monitor/**/*}"
 #
-# Pipelines started by hand (Build > Pipelines > Run pipeline), by the API or a schedule have every job.
+# Pipelines started by hand (Build > Pipelines > Run pipeline), by the API or a schedule have every plan and deploy
+# job (INFRA_PIPELINE=deploy, the default).
 #
-# Status and reboots do not depend on a change, they only exist in such pipelines on the default branch:
+# Status and reboots do not depend on a change, they only exist in pipelines with INFRA_PIPELINE=reboot on the default
+# branch (Run pipeline, or a schedule with that variable); such a pipeline has no plans and no deploys:
 #
 #   status:
 #       extends: .infra:status          # os-info and reboot-status, a warning (exit code 3) when hosts need a reboot
 #
-#   reboot:
-#       extends: .infra:reboot          # only hosts that need it, one at a time
+#   reboot:web01:                       # one button per host, reboots only when the host needs it
+#       extends: .infra:reboot
 #       variables:
-#           HOSTS: "all,!gitlab_runners"
+#           HOSTS: web01
 #
 #   reboot:runner01:                    # a runner must not reboot itself: run it on another one
 #       extends: .infra:reboot
@@ -61,10 +63,24 @@
 #       variables:
 #           HOSTS: runner01
 #
-# The GitLab server needs INFRA_GITLAB_SERVER as for deploys. A schedule (Build > Pipeline schedules) runs status
-# regularly; plans run as well, reboot buttons stay manual.
+# The GitLab server needs INFRA_GITLAB_SERVER as for deploys. A schedule (Build > Pipeline schedules) with
+# INFRA_PIPELINE=reboot runs status regularly; the reboot buttons stay manual.
 # Jobs that follow a deploy (e.g. a notification with needs: deploy:<domain>) extend .infra:after-deploy and set
 # the same DOMAIN/INFRA_CHANGES, so they exist exactly when the deploy job does.
+
+# Run pipeline offers INFRA_PIPELINE: "deploy" (default, also for pushes) has plans and deploy buttons, "reboot" only
+# status and the reboot buttons. Project jobs that should not run in a reboot pipeline extend .infra:not-reboot.
+variables:
+    INFRA_PIPELINE:
+        value: deploy
+        options: [deploy, reboot]
+        description: "deploy: plans and deploy buttons; reboot: only status and the reboot buttons (default branch)"
+
+.infra:not-reboot:
+    rules:
+        -   if: $INFRA_PIPELINE == "reboot"
+            when: never
+        -   when: on_success
 
 .infra:job:
     image: alpine/ansible:2.21.0
@@ -96,6 +112,8 @@
     extends: .infra:job
     stage: test
     rules:
+        -   if: $INFRA_PIPELINE == "reboot"
+            when: never
         # changes compares with the previous push of the branch; a new branch counts as changed everywhere
         -   if: $CI_COMMIT_REF_PROTECTED == "true"
             changes: &infra_changes
@@ -108,6 +126,8 @@
     extends: .infra:job
     stage: deploy
     rules:
+        -   if: $INFRA_PIPELINE == "reboot"
+            when: never
         -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
             changes: *infra_changes
             when: manual
@@ -124,6 +144,8 @@
     variables:
         INFRA_CHANGES: "{inventory.yml,ansible.cfg,site.yml,group_vars/**/*,host_vars/**/*,templates/**/*}"
     rules:
+        -   if: $INFRA_PIPELINE == "reboot"
+            when: never
         -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
             changes: *infra_changes
 
@@ -131,7 +153,7 @@
     extends: .infra:job
     stage: test
     rules:
-        -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE =~ /^(web|api|schedule)$/
+        -   if: $INFRA_PIPELINE == "reboot" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     # hosts that need a reboot show as warning, not as failed pipeline
     allow_failure:
         exit_codes: [3]
@@ -146,7 +168,7 @@
     extends: .infra:job
     stage: deploy
     rules:
-        -   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE =~ /^(web|api|schedule)$/
+        -   if: $INFRA_PIPELINE == "reboot" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
             when: manual
     # never at the same time as a deploy
     resource_group: infra-deploy
