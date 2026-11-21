@@ -52,10 +52,10 @@
 #   status:
 #       extends: .infra:status          # os-info and reboot-status, a warning (exit code 3) when hosts need a reboot
 #
-#   reboot:
-#       extends: .infra:reboot          # only hosts that need it, one at a time
+#   reboot:web01:                       # one button per host, reboots only when the host needs it
+#       extends: .infra:reboot
 #       variables:
-#           HOSTS: "all,!gitlab_runners"
+#           HOSTS: web01
 #
 #   reboot:runner01:                    # a runner must not reboot itself: run it on another one
 #       extends: .infra:reboot
