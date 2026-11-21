@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.9.0...base-v0.10.0) (2026-11-21)
+
+
+### Features
+
+* **base:** separate reboot pipeline via INFRA_PIPELINE ([#48](https://github.com/ErrorCollector/ansible-infra/issues/48)) ([d7538de](https://github.com/ErrorCollector/ansible-infra/commit/d7538deae07ec05ffcf0443141b9b649c55bb675))
+
 ## [0.9.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.8.1...base-v0.9.0) (2026-11-20)
 
 
