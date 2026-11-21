@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.5.1...gitlab-v0.5.2) (2026-11-21)
+
+
+### Bug Fixes
+
+* **gitlab:** keep the backup sidecar running and plans working ([#54](https://github.com/ErrorCollector/ansible-infra/issues/54)) ([b282b8a](https://github.com/ErrorCollector/ansible-infra/commit/b282b8ac7dcb75631ef78709710dd22044e90640))
+
 ## [0.5.1](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.5.0...gitlab-v0.5.1) (2026-11-20)
 
 
