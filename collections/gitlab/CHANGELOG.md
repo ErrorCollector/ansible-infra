@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.5.2...gitlab-v0.6.0) (2026-11-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gitlab:** gitlab_backup_image is gone and the role refuses to run while it is set. Move the sidecar into gitlab_compose_extra_services with the same service name and definition to keep the container as it is.
+
+### Features
+
+* **gitlab:** extra compose services instead of the backup sidecar ([#56](https://github.com/ErrorCollector/ansible-infra/issues/56)) ([fb5a169](https://github.com/ErrorCollector/ansible-infra/commit/fb5a1694eefe99a8c5f0b773df272da92f8fe469))
+
 ## [0.5.2](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.5.1...gitlab-v0.5.2) (2026-11-21)
 
 
