@@ -16,7 +16,7 @@
         - { path: logs, mode: "0755" }
         - { path: data, mode: "0755" }
         - { path: registry, mode: "0770" }
-        - { path: postgres_registry, mode: "0755" }
+        - { path: postgres_registry, mode: "0700" }
     loop_control:
         label: "{{ gitlab_home }}/{{ item.path }}"
 
@@ -65,6 +65,7 @@
     community.docker.docker_compose_v2:
         project_src: "{{ gitlab_dir }}"
         pull: missing
-        wait: true
+        # --dry-run does not start anything: waiting would only judge the current containers (a stopped one fails it)
+        wait: "{{ not ansible_check_mode }}"
         wait_timeout: "{{ gitlab_wait_timeout }}"
     when: not (ansible_check_mode and gitlab_dir_result is changed)

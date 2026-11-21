@@ -62,6 +62,8 @@ services:
     gitlab_backup:
         image: {{ gitlab_backup_image }}
         container_name: gitlab_pg_backup
+        # runs the backups on its SCHEDULE, without a policy it stays down after a reboot
+        restart: always
         depends_on:
             postgres_registry:
                 condition: service_healthy
