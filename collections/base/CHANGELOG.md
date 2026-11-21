@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.10.0...base-v0.10.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **base:** strip colors before parsing os-info and reboot-status ([#50](https://github.com/ErrorCollector/ansible-infra/issues/50)) ([da83e7c](https://github.com/ErrorCollector/ansible-infra/commit/da83e7c99cca118fb6aeb60833a70c537a6ca696))
+
 ## [0.10.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.9.0...base-v0.10.0) (2026-11-21)
 
 
