@@ -9,6 +9,13 @@
         quiet: true
     when: not ansible_check_mode
 
+# Without this the sidecar would silently drop out of the compose file and keep running unmanaged
+-   name: Refuse the removed gitlab_backup_image
+    ansible.builtin.assert:
+        that: gitlab_backup_image is not defined
+        fail_msg: "gitlab_backup_image was removed: define the sidecar in gitlab_compose_extra_services (see defaults/main.yml)"
+        quiet: true
+
 -   name: GitLab
     ansible.builtin.import_tasks: gitlab.yml
 

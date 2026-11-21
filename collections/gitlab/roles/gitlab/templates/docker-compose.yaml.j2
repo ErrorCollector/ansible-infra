@@ -57,16 +57,7 @@ services:
         env_file:
             - .env
 {% endif %}
-{% if gitlab_backup_image | length > 0 %}
+{% if gitlab_compose_extra_services | length > 0 %}
 
-    gitlab_backup:
-        image: {{ gitlab_backup_image }}
-        container_name: gitlab_pg_backup
-        # runs the backups on its SCHEDULE, without a policy it stays down after a reboot
-        restart: always
-        depends_on:
-            postgres_registry:
-                condition: service_healthy
-        env_file:
-            - .env
+{{ gitlab_compose_extra_services | to_nice_yaml(indent=4, sort_keys=false) | indent(4, first=true) | regex_replace('\n+$', '') }}
 {% endif %}

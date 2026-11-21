@@ -62,6 +62,7 @@ gitlab_home: /srv/gitlab
 gitlab_ports: ["80:80", "443:443", "22:22", "5050:5050"]
 gitlab_env_template: "{{ inventory_dir }}/templates/gitlab.env.j2"   # project root (playbook_dir is the collection)
 gitlab_backup_s3_bucket: gitlab-backup.example.org
+gitlab_compose_extra_services: {}   # more services of the compose project, e.g. a backup sidecar (see defaults)
 gitlab_omnibus_config: |
     gitlab_rails['smtp_password'] = '{{ vault_smtp_password }}'
     registry_external_url 'https://gitlab.example.org:5050'
