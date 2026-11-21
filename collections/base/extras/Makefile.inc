@@ -204,7 +204,7 @@ inventory: ## Show the resolved inventory
 os-info: check-args check-docker ## Distribution and kernel: [HOSTS=h1,h2]
 	@$(ANSIBLE) ansible $(or $(HOSTS),all) -i $(INVENTORY) -o -m shell -a \
 		'. /etc/os-release; echo "$$PRETTY_NAME;$$(uname -r)"' \
-		2>/dev/null | sed 's/ | CHANGED | rc=0 | (stdout) /;/' | sort -t ';' -k3,3V -k1,1 \
+		2>/dev/null | awk '{ gsub(/\033\[[0-9;]*m/, ""); print }' | sed 's/ | CHANGED | rc=0 | (stdout) /;/' | sort -t ';' -k3,3V -k1,1 \
 		| (echo "HOST;DISTRIBUTION;KERNEL"; cat) | column -t -s ';'
 
 # --------------------------------------------------
@@ -216,7 +216,7 @@ os-info: check-args check-docker ## Distribution and kernel: [HOSTS=h1,h2]
 reboot-status: check-args check-docker ## Which hosts need a reboot? [HOSTS=h1,h2]
 	@out=$$($(ANSIBLE) ansible $(or $(HOSTS),all) -i $(INVENTORY) -o -m shell -a \
 		'dnf -q needs-restarting -r >/dev/null 2>&1 && r=no || r=YES; echo "$$r;$$(uname -r);$$(uptime -p | sed "s/^up //")"' \
-		2>/dev/null | sed -E 's/ \| CHANGED \| rc=0 \| \(stdout\) /;/; s/ \| (UNREACHABLE|FAILED).*/;ERROR;-;-/' \
+		2>/dev/null | awk '{ gsub(/\033\[[0-9;]*m/, ""); print }' | sed -E 's/ \| CHANGED \| rc=0 \| \(stdout\) /;/; s/ \| (UNREACHABLE|FAILED).*/;ERROR;-;-/' \
 		| LC_ALL=C sort -t ';' -k2,2 -k1,1); rc=$$?; \
 	(echo "HOST;REBOOT;KERNEL;UPTIME"; echo "$$out") | column -t -s ';'; \
 	todo=$$(echo "$$out" | awk -F ';' '$$2 == "YES" { print $$1 }' | paste -sd, -); \
