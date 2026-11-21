@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.10.1...base-v0.10.2) (2026-11-21)
+
+
+### Bug Fixes
+
+* **base:** reboot without monitoring host ([#52](https://github.com/ErrorCollector/ansible-infra/issues/52)) ([4b0ca92](https://github.com/ErrorCollector/ansible-infra/commit/4b0ca921ee5a0b6f8da236d9a0c85d5e3bc1d695))
+
 ## [0.10.1](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.10.0...base-v0.10.1) (2026-11-21)
 
 
