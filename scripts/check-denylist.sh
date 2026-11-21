@@ -21,7 +21,10 @@ if [[ ${1:-} == --messages ]]; then
     range="${2:?usage: check-denylist.sh --messages <rev-range>}"
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
-    git log --format='commit %H%n%B' "$range" >"$tmp/commit-messages"
+    # Name and e-mail of Co-authored-by/Signed-off-by trailers are the committers' own identity, public anyway as
+    # commit authors (GitHub adds Co-authored-by when squashing a PR with commits of several people)
+    git log --format='commit %H%n%B' "$range" \
+        | sed -E 's/^(Co-authored-by|Signed-off-by): .*/\1: <identity>/I' >"$tmp/commit-messages"
     printf '%s\n' "${PR_TITLE:-}" "${PR_BODY:-}" >"$tmp/pull-request"
     files=("$tmp/commit-messages" "$tmp/pull-request")
 else
