@@ -156,10 +156,15 @@ deploy:pangolin:
 - Protected file variables of the project: `INFRA_SSH_KEY` (private key of `provisioning`), `INFRA_VAULT_PASS` and
   `INFRA_KNOWN_HOSTS` (known_hosts of all hosts; host key checking is always on in CI, the jobs fail without it). Use these names rather than `ANSIBLE_*`: with a protected project
   variable of the same name, unprotected branches would silently fall back to a group or instance variable.
-- Plan and deploy of a domain only appear when the push changes `requirements.d/<domain>.yml` or a file matching
-  `INFRA_CHANGES` (default: `inventory.yml`, `ansible.cfg`, `site.yml`, `group_vars/`, `host_vars/`, `templates/`).
-  A Renovate MR for one collection therefore only offers that domain; docs, CI or project app roles offer none.
-  Jobs without a domain set their own `INFRA_CHANGES` (glob with `{a,b}`, e.g. their role and host_vars). A pipeline
+- Plan and deploy of a domain only appear when the push changes a file of the domain or one matching
+  `INFRA_CHANGES` (default: `inventory.yml`, `ansible.cfg`, `site.yml`). Files of the domain:
+  `requirements.d/<domain>.yml`, `{group_vars,host_vars}/*/<domain>.yml` and `<domain>.vault.yml`,
+  `templates/<domain>/`. Ansible loads every file of `host_vars/<host>/`, so the variables of a domain go into
+  `<domain>.yml` (secrets `<domain>.vault.yml`); what the project's own roles use (alone or together with a domain)
+  stays in `vars.yml`/`vault.yml`. A Renovate MR for one collection therefore only offers that domain, a change of
+  the GitLab variables only the gitlab jobs; docs, CI or project app roles offer none.
+  Jobs without a domain set their own `INFRA_CHANGES` (glob with `{a,b}`, e.g. their role and
+  `host_vars/<host>/{vars,vault}.yml`). A pipeline
   started by hand (*Run pipeline*), by the API or a schedule has every job. Jobs that follow a deploy extend
   `.infra:after-deploy` with the same variables.
 - `.infra:status` and `.infra:reboot` only exist in pipelines with `INFRA_PIPELINE=reboot` on the default branch

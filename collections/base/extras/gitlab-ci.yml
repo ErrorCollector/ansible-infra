@@ -32,8 +32,10 @@
 #           HOSTS: gitlab
 #           INFRA_GITLAB_SERVER: "true"
 #
-# Both jobs only appear when the push changes requirements.d/$DOMAIN.yml (the version of the domain) or a file
-# matching INFRA_CHANGES (default: inventory, group_vars, host_vars, templates, site.yml, ansible.cfg).
+# Both jobs only appear when the push changes a file of the domain or a file matching INFRA_CHANGES (default:
+# inventory.yml, ansible.cfg, site.yml). Files of the domain: requirements.d/$DOMAIN.yml (its version),
+# {group_vars,host_vars}/*/$DOMAIN.yml and $DOMAIN.vault.yml (its variables) and templates/$DOMAIN/ (its templates).
+# Variables used by the project's own roles (or by them and a domain) stay in vars.yml/vault.yml.
 # Override INFRA_CHANGES per job for jobs without a domain, e.g. one app role:
 #
 #   plan:monitor:
@@ -41,7 +43,7 @@
 #       variables:
 #           HOSTS: monitor
 #           TAGS: monitor
-#           INFRA_CHANGES: "{roles/example.monitor/**/*,host_vars/monitor/**/*}"
+#           INFRA_CHANGES: "{roles/example.monitor/**/*,host_vars/monitor/{vars,vault}.yml,inventory.yml,site.yml}"
 #
 # Pipelines started by hand (Build > Pipelines > Run pipeline), by the API or a schedule have every plan and deploy
 # job (INFRA_PIPELINE=deploy, the default).
@@ -90,7 +92,7 @@ variables:
         ANSIBLE_CONFIG: "$CI_PROJECT_DIR/ansible.cfg"
         ANSIBLE_FORCE_COLOR: "true"
         # rules:changes glob (File.fnmatch, {a,b} allowed) besides requirements.d/$DOMAIN.yml
-        INFRA_CHANGES: "{inventory.yml,ansible.cfg,site.yml,group_vars/**/*,host_vars/**/*,templates/**/*}"
+        INFRA_CHANGES: "{inventory.yml,ansible.cfg,site.yml}"
     before_script:
         - apk add -q --no-cache bash make git
         - |
@@ -118,6 +120,10 @@ variables:
         -   if: $CI_COMMIT_REF_PROTECTED == "true"
             changes: &infra_changes
                 - requirements.d/$DOMAIN.yml
+                # without a domain these match nothing
+                - "{group_vars,host_vars}/*/$DOMAIN.yml"
+                - "{group_vars,host_vars}/*/$DOMAIN.vault.yml"
+                - templates/$DOMAIN/**/*
                 - $INFRA_CHANGES
     script:
         - make ci-plan
@@ -142,7 +148,7 @@ variables:
 
 .infra:after-deploy:
     variables:
-        INFRA_CHANGES: "{inventory.yml,ansible.cfg,site.yml,group_vars/**/*,host_vars/**/*,templates/**/*}"
+        INFRA_CHANGES: "{inventory.yml,ansible.cfg,site.yml}"
     rules:
         -   if: $INFRA_PIPELINE == "reboot"
             when: never
