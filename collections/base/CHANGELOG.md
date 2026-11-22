@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.10.2...base-v0.11.0) (2026-11-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **base:** variables of a domain must live in <domain>.yml or <domain>.vault.yml next to vars.yml and templates of a domain in templates/<domain>/, otherwise their changes no longer offer the domain's jobs. Jobs without a domain keep their own INFRA_CHANGES.
+
+### Features
+
+* **base:** domain jobs only react to the files of their domain ([#59](https://github.com/ErrorCollector/ansible-infra/issues/59)) ([672eb83](https://github.com/ErrorCollector/ansible-infra/commit/672eb8348edc04b397091f43fc3331182ed4f979))
+* **base:** limit domain runs to the hosts of the domain ([#58](https://github.com/ErrorCollector/ansible-infra/issues/58)) ([dcd1d72](https://github.com/ErrorCollector/ansible-infra/commit/dcd1d72f90ac47fda049a42f8b6cb7d40c0e61a2))
+
 ## [0.10.2](https://github.com/ErrorCollector/ansible-infra/compare/base-v0.10.1...base-v0.10.2) (2026-11-21)
 
 
