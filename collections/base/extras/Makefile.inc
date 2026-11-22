@@ -13,6 +13,14 @@ EXTRAS_DIR      := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 COLLECTIONS_DIR := collections/ansible_collections/errorcollector
 DOMAINS         := base pangolin gitlab web
 
+# Inventory groups of the domain playbooks (keep in sync with collections/*/playbooks). A domain run without HOSTS is
+# limited to them: the fact gathering of the other plays (hosts: all) would otherwise connect to every host.
+# Commas only: in a pattern with a comma Ansible no longer splits at colons (CI_LIMIT appends ",!gitlab_server").
+DOMAIN_HOSTS_base     := all
+DOMAIN_HOSTS_pangolin := pangolin_server,newt,pangolin_client
+DOMAIN_HOSTS_gitlab   := gitlab_server,gitlab_runners
+DOMAIN_HOSTS_web      := traefik
+
 INVENTORY      ?= inventory.yml
 INIT_INVENTORY ?= $(INVENTORY)
 INIT_PLAYBOOK  ?= playbooks/init.yml
@@ -36,8 +44,10 @@ ANSIBLE    := docker compose -f $(EXTRAS_DIR)/docker-compose.yaml --project-dire
 ANSIBLE_SH := $(ANSIBLE) sh -c
 endif
 
-# HOSTS=all or empty: no --limit. TAGS wins over DOMAIN (the domain tag).
-LIMIT_ARG = $(if $(filter-out all,$(HOSTS)),--limit $(HOSTS))
+# HOSTS wins; without HOSTS the hosts of DOMAIN (not with TAGS, which may select tasks of other domains).
+# HOSTS=all or no hosts at all: no --limit. TAGS wins over DOMAIN (the domain tag).
+TARGET_HOSTS = $(or $(HOSTS),$(if $(TAGS),,$(DOMAIN_HOSTS_$(DOMAIN))))
+LIMIT_ARG    = $(if $(filter-out all,$(TARGET_HOSTS)),--limit '$(TARGET_HOSTS)')
 TAGS_ARG  = $(if $(or $(TAGS),$(DOMAIN)),--tags $(or $(TAGS),$(DOMAIN)))
 
 ifneq ($(DOMAIN),)
@@ -151,7 +161,7 @@ shell: check-args check-vault ## Shell environment only (no container restarts):
 ifeq ($(INFRA_GITLAB_SERVER),true)
 CI_LIMIT = --limit '$(HOSTS)'
 else
-CI_LIMIT = --limit '$(if $(filter-out all,$(HOSTS)),$(HOSTS),all),!gitlab_server'
+CI_LIMIT = --limit '$(if $(filter-out all,$(TARGET_HOSTS)),$(TARGET_HOSTS),all),!gitlab_server'
 endif
 
 .PHONY: ci-plan

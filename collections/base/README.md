@@ -74,6 +74,9 @@ Variables a project can override before the `include`: `INVENTORY`, `INIT_INVENT
 | `make reboot HOSTS=…\|all [FORCE=1]` | Controlled reboot, one host at a time, only if needed (`errorcollector.base.reboot`) |
 | `make reboot-status`, `os-info`, `ping`, `inventory`, `shell`, `init HOST=…` | |
 
+With `DOMAIN` and without `HOSTS` (or `TAGS`), `plan` and the CI jobs only touch the hosts of the domain's inventory groups
+(`DOMAIN_HOSTS_<domain>` in `extras/Makefile.inc`, e.g. `gitlab_server,gitlab_runners`); `HOSTS=all` lifts that.
+
 `plan`, `deploy` and `reboot` refuse to run when an installed collection does not match its pin
 (e.g. after pulling a Renovate MR without `make install`). A collection linked by `make dev` only prints a
 warning; `make install` switches back to the pinned version.
