@@ -1,7 +1,7 @@
 traefik_dir: /opt/traefik
 
 # renovate: datasource=docker depName=docker.io/library/traefik
-traefik_version: v3.7.19
+traefik_version: v3.8.0
 traefik_image: traefik
 
 # Let's Encrypt: traefik_acme_email is required (project vars)
