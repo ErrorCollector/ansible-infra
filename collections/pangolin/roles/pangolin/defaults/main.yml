@@ -16,7 +16,7 @@ pangolin_gerbil_image: docker.io/fosrl/gerbil
 # renovate: datasource=github-releases depName=fosrl/badger
 pangolin_badger_version: v1.8.0
 # renovate: datasource=docker depName=docker.io/library/traefik
-pangolin_traefik_version: v3.7.19
+pangolin_traefik_version: v3.8.0
 pangolin_traefik_image: docker.io/traefik
 
 # Memory of the pangolin container, empty limit = no limits
