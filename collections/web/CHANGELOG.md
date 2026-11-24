@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/ErrorCollector/ansible-infra/compare/web-v0.3.0...web-v0.3.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deps:** update docker.io/library/traefik docker tag to v3.8.0 ([#61](https://github.com/ErrorCollector/ansible-infra/issues/61)) ([8873ca1](https://github.com/ErrorCollector/ansible-infra/commit/8873ca1a34b581a0ec686a3a5224732f337ab66b))
+
 ## [0.3.0](https://github.com/ErrorCollector/ansible-infra/compare/web-v0.2.0...web-v0.3.0) (2026-11-20)
 
 
