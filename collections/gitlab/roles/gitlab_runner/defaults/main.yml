@@ -1,6 +1,6 @@
 # The runner version follows the GitLab version (major.minor); Renovate group "gitlab" updates both
 # renovate: datasource=docker depName=gitlab/gitlab-runner versioning=regex:^alpine-v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$
-gitlab_runner_version: alpine-v19.6.0
+gitlab_runner_version: alpine-v19.6.1
 gitlab_runner_image: gitlab/gitlab-runner
 
 # gitlab_runner_url, gitlab_runner_id, gitlab_runner_token (vault) are required (project vars)
