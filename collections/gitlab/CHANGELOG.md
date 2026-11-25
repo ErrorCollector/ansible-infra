@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.6.0...gitlab-v0.6.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **gitlab:** update gitlab/gitlab-runner docker tag to alpine-v19.6.1 ([#63](https://github.com/ErrorCollector/ansible-infra/issues/63)) ([56dea11](https://github.com/ErrorCollector/ansible-infra/commit/56dea11955fcba826921b3bc93c25a2d31a3e186))
+
 ## [0.6.0](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.5.2...gitlab-v0.6.0) (2026-11-21)
 
 
