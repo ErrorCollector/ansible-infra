@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.6.1...gitlab-v0.6.2) (2026-11-26)
+
+
+### Bug Fixes
+
+* **gitlab:** update gitlab/gitlab-ce docker tag to v19.6.2 ([#65](https://github.com/ErrorCollector/ansible-infra/issues/65)) ([48b0018](https://github.com/ErrorCollector/ansible-infra/commit/48b00185814fd5f877163153d00eb9dc59575efd))
+
 ## [0.6.1](https://github.com/ErrorCollector/ansible-infra/compare/gitlab-v0.6.0...gitlab-v0.6.1) (2026-11-24)
 
 
